@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
-:root{--bg:#FBF7F0;--card:#fff;--ink:#2A1A1C;--muted:#6B5759;--line:#E6D9C4;--maroon:#7A1F2B;--gold:#7A5A1E;--goldbg:#F5ECD8;--red:#A3262A;--redbg:#F7E1DF;--green:#2F6B3A;--greenbg:#E3F0E2;--chip:#EFE7DA}
+:root{--bg:#F7F2EB;--card:#fff;--ink:#201D1D;--muted:#625A55;--line:#D7CDC0;--maroon:#5A1324;--gold:#7E5A27;--goldbg:#EFE3D0;--red:#A3262A;--redbg:#F7E1DF;--green:#2F6B3A;--greenbg:#E3F0E2;--chip:#ECE4D8}
 @font-face{font-family:'Agatho';src:url('https://vidasha.com/cdn/shop/files/Agatho_Regular.woff2?v=1792749480') format('woff2'),url('https://vidasha.com/cdn/shop/files/Agatho_Regular.woff?v=1792749417') format('woff');font-weight:400;font-style:normal;font-display:swap}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -17,7 +17,7 @@ header{background:var(--card);border-bottom:1px solid var(--line);position:stick
 .brand{font:400 24px 'Agatho',Georgia,serif;color:var(--maroon);letter-spacing:.02em}
 nav{display:flex;flex-wrap:wrap;gap:4px;flex:1}
 nav button{font:inherit;font-size:15px;border:none;background:none;padding:9px 12px;border-radius:8px;color:var(--ink);cursor:pointer;min-height:42px}
-nav button.on{background:#F3E4E2;color:var(--maroon);font-weight:700}
+nav button.on{background:#F1E1E4;color:var(--maroon);font-weight:700}
 .who{font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:center}
 .who button{font:inherit;font-size:13px;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--ink)}
 main{max-width:1000px;margin:0 auto;padding:18px 16px 60px;display:flex;flex-direction:column;gap:18px}
@@ -30,32 +30,32 @@ h2{font:400 19px/1.3 'Agatho',Georgia,serif;margin:0}
 .task:hover{border-color:#C9B48F}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{font-size:12px;font-weight:700;padding:2px 8px;border-radius:6px;background:var(--chip);color:#5C4A3A}
-.c-high{background:#F3E4E2;color:var(--maroon)}.c-red{background:var(--redbg);color:var(--red)}.c-green{background:var(--greenbg);color:var(--green)}.c-gold{background:var(--goldbg);color:var(--gold)}
+.c-high{background:#F1E1E4;color:var(--maroon)}.c-red{background:var(--redbg);color:var(--red)}.c-green{background:var(--greenbg);color:var(--green)}.c-gold{background:var(--goldbg);color:var(--gold)}
 .score{background:var(--maroon);color:#fff;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:6px}
 .score b{font-size:44px;line-height:1;font-variant-numeric:tabular-nums}
 .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
 label{display:flex;flex-direction:column;gap:5px;font-size:14px;font-weight:600}
-input,select,textarea{font:inherit;font-weight:400;padding:10px;border:1px solid #D8C8AE;border-radius:8px;background:#fff;color:var(--ink);width:100%}
+input,select,textarea{font:inherit;font-weight:400;padding:10px;border:1px solid #CFC3B3;border-radius:8px;background:#fff;color:var(--ink);width:100%}
 textarea{resize:vertical}
 input[type=checkbox]{width:auto}
 .btn{font:inherit;font-weight:700;border:none;border-radius:10px;background:var(--maroon);color:#fff;min-height:44px;padding:0 18px;cursor:pointer}
-.btn.sec{background:#fff;color:var(--ink);border:1px solid #D8C8AE;font-weight:600}
+.btn.sec{background:#fff;color:var(--ink);border:1px solid #CFC3B3;font-weight:600}
 .btn.ok{background:var(--green)}.btn.bad{background:var(--red)}
 .btn.small{min-height:36px;padding:0 12px;font-size:14px}
 .btn:disabled{opacity:.5;cursor:default}
-.seg{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid #D8C8AE;border-radius:8px;overflow:hidden}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid #CFC3B3;border-radius:8px;overflow:hidden}
 .seg button{font:inherit;min-height:42px;border:none;background:#fff;cursor:pointer;color:var(--ink)}
-.seg button+button{border-left:1px solid #D8C8AE}
+.seg button+button{border-left:1px solid #CFC3B3}
 .seg button.on{background:var(--maroon);color:#fff;font-weight:700}
-.pill{font:inherit;font-size:14px;min-height:38px;padding:0 14px;border-radius:99px;border:1px solid #D8C8AE;background:#fff;cursor:pointer;color:var(--ink)}
+.pill{font:inherit;font-size:14px;min-height:38px;padding:0 14px;border-radius:99px;border:1px solid #CFC3B3;background:#fff;cursor:pointer;color:var(--ink)}
 .pill.on{background:var(--maroon);border-color:var(--maroon);color:#fff;font-weight:700}
-.check{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid #F0E6D6}
+.check{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid #E8DFD3}
 .check:first-child{border-top:none}
 .tbl{overflow-x:auto;background:#fff;border:1px solid var(--line);border-radius:12px}
 table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
 th{background:var(--goldbg);text-align:left;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:#5C4A3A;padding:9px 12px}
-td{padding:9px 12px;border-top:1px solid #F0E6D6;vertical-align:top}
+td{padding:9px 12px;border-top:1px solid #E8DFD3;vertical-align:top}
 .num{font-variant-numeric:tabular-nums}
 .barw{height:10px;background:#F4EDE2;border-radius:99px;overflow:hidden;min-width:80px;flex:1}
 .barw div{height:100%;border-radius:99px}
@@ -71,7 +71,7 @@ pre.log{white-space:pre-wrap;font-size:12px;color:var(--muted);margin:0}
 .or{text-align:center;color:var(--muted);font-size:13px}
 .media{display:flex;flex-wrap:wrap;gap:8px}
 .media label.btn{display:inline-flex;flex-direction:row;align-items:center;font-size:14px;font-weight:600}
-.att{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;font-size:14px;border-top:1px solid #F0E6D6;padding-top:8px}
+.att{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;font-size:14px;border-top:1px solid #E8DFD3;padding-top:8px}
 .att img,.att video{max-width:160px;max-height:120px;border-radius:8px}
 .att audio{max-width:240px}
 .btn.rec{background:var(--red);color:#fff;border-color:var(--red)}
@@ -262,7 +262,7 @@ VIEWS.day = function () {
     var diff = (d.score !== null && d.last !== null) ? Math.round(d.last - d.score) : null;
     var h = '<div><h1>' + e(APP.me.name) + '’s day</h1><span class="muted">' + e(fmtDate(APP.today)) + (APP.working ? '' : ' · holiday or weekly off') + '</span></div>';
     h += '<section class="score"><div class="row" style="justify-content:space-between"><span>My score this week</span><span>Last week ' + pct(d.last) + '</span></div>' +
-      '<div class="row"><b>' + pct(d.score) + '</b>' + (diff !== null ? '<span class="chip" style="background:#9A3A46;color:#fff">' + (diff >= 0 ? diff + ' points better' : (-diff) + ' points worse') + '</span>' : '') + '</div>' +
+      '<div class="row"><b>' + pct(d.score) + '</b>' + (diff !== null ? '<span class="chip" style="background:#7A2C3E;color:#fff">' + (diff >= 0 ? diff + ' points better' : (-diff) + ' points worse') + '</span>' : '') + '</div>' +
       '<span style="font-size:13px">Share of my work not done on time, weighted by priority. 0% is a perfect week.</span></section>';
     h += '<section class="list"><h2>Due now</h2>' + (due.length ? due.map(function (t) { return taskCard(t); }).join('') : '<p class="empty">Nothing due. Good.</p>') + '</section>';
     APP.checks = {}; d.checks.forEach(function (c) { APP.checks[c.id] = c; });
@@ -369,7 +369,7 @@ function loadOwner() {
   var o = $('no').value; if (!o) return;
   call('api_owner_load', { p_owner: o }).then(function (l) {
     $('nload').innerHTML = '<h2>' + e(o) + '’s load</h2><div class="row" style="justify-content:space-between"><span>Open High tasks</span><b>' + l.highs.length + ' of ' + APP.highCap + '</b></div>' +
-      '<div class="barw"><div style="width:' + Math.min(100, l.highs.length / APP.highCap * 100) + '%;background:#A57E33"></div></div>' +
+      '<div class="barw"><div style="width:' + Math.min(100, l.highs.length / APP.highCap * 100) + '%;background:#AF7F3E"></div></div>' +
       '<div class="row" style="justify-content:space-between"><span>All open company tasks</span><b>' + l.open + '</b></div><div class="row" style="justify-content:space-between"><span>Last week’s score</span><b>' + pct(l.last) + '</b></div>';
   });
 }
@@ -442,7 +442,7 @@ VIEWS.board = function () {
     }
     h += '<div class="tbl"><table><thead><tr><th>Person</th><th style="width:30%">Score</th><th>Tasks</th><th>Checklist</th><th>Last week</th><th>Change</th><th>In revision</th><th>Red Flags</th></tr></thead><tbody>' +
       (b.rows.length ? b.rows.map(function (r) {
-        var m = r.score === null ? 0 : Math.min(100, r.score * 2), col = r.score === null ? '#ccc' : r.score <= 10 ? '#2F6B3A' : r.score <= 20 ? '#A57E33' : '#A3262A';
+        var m = r.score === null ? 0 : Math.min(100, r.score * 2), col = r.score === null ? '#ccc' : r.score <= 10 ? '#2F6B3A' : r.score <= 20 ? '#AF7F3E' : '#A3262A';
         return '<tr><td><b>' + e(r.person) + '</b><br><span class="muted">' + e(r.role) + '</span></td><td><div class="row" style="flex-wrap:nowrap"><b class="num" style="width:48px;text-align:right">' + pct(r.score) + '</b><div class="barw"><div style="width:' + m + '%;background:' + col + '"></div></div></div>' + (r.low ? '<span class="muted">Low load</span>' : '') + '</td>' +
           '<td class="num">' + pct(r.task_pct) + '</td><td class="num">' + pct(r.check_pct) + '</td><td class="num">' + pct(r.last) + '</td><td style="font-weight:700;color:' + (r.change === null ? 'inherit' : r.change >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (r.change === null ? '–' : r.change >= 0 ? '▲ ' + r.change : '▼ ' + (-r.change)) + '</td><td class="num">' + r.open + '</td><td class="num" style="font-weight:700;color:' + (r.rf ? 'var(--red)' : 'inherit') + '">' + r.rf + '</td></tr>';
       }).join('') : '<tr><td colspan="8" class="empty">No scores for this week yet.</td></tr>') + '</tbody></table></div>';
@@ -459,7 +459,7 @@ VIEWS.team = function () {
     h += '<section class="list"><h2>Team tasks I gave · not in company score</h2>' + (d.given.length ? d.given.map(function (t) { return taskCard(t, 'To ' + t.owner); }).join('') : '<p class="empty">None open.</p>') + '</section>';
     h += '<section class="card"><h2>Team checklists today</h2>' + (d.team.length ? d.team.map(function (n) {
       var c = d.checks[n] || { done: 0, total: 0, open: [] }, w = c.total ? c.done / c.total * 100 : 0;
-      return '<div class="check" style="flex-direction:column;gap:4px"><div class="row" style="justify-content:space-between;width:100%"><b>' + e(n) + '</b><span class="num">' + c.done + ' of ' + c.total + '</span></div><div class="barw" style="width:100%"><div style="width:' + w + '%;background:' + (w === 100 ? '#2F6B3A' : w >= 60 ? '#A57E33' : '#A3262A') + '"></div></div>' + (c.open.length ? '<span class="muted">Open: ' + e(c.open.join(', ')) + '</span>' : '') + '</div>';
+      return '<div class="check" style="flex-direction:column;gap:4px"><div class="row" style="justify-content:space-between;width:100%"><b>' + e(n) + '</b><span class="num">' + c.done + ' of ' + c.total + '</span></div><div class="barw" style="width:100%"><div style="width:' + w + '%;background:' + (w === 100 ? '#2F6B3A' : w >= 60 ? '#AF7F3E' : '#A3262A') + '"></div></div>' + (c.open.length ? '<span class="muted">Open: ' + e(c.open.join(', ')) + '</span>' : '') + '</div>';
     }).join('') : '<p class="empty">Nobody has you as HOD in the people list yet.</p>') + '</section>';
     $('view').innerHTML = h;
   });
