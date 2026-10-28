@@ -147,12 +147,29 @@ function mediaBox(id, label) {
   };
   return '<div class="card" style="gap:10px"><b>' + e(label) + '</b><div class="media">' +
     '<button type="button" class="btn sec small" id="' + id + '-rec" onclick="recVoice(\'' + id + '\')">Record voice</button>' +
-    pick('Take photo', 'image/*', true) + pick('Record video', 'video/*', true) + pick('Choose file', '', false, true) +
+    pick('Take photo', 'image/*', true) + pick('Choose file', '', false, true) +
     '</div><div id="' + id + '-list" style="display:flex;flex-direction:column;gap:8px"></div></div>';
 }
 function addMedia(id, input) {
-  [].forEach.call(input.files || [], function (f) { MEDIA[id].push(f); });
-  input.value = ''; drawMedia(id);
+  var files = [].slice.call(input.files || []); input.value = '';
+  Promise.all(files.map(function (f) {
+    if (/^video/.test(f.type) || /\.(mp4|mov|avi|mkv|webm|3gp)$/i.test(f.name) && !/^audio/.test(f.type)) { toast('Videos are not uploaded here. Share a Drive link instead.'); return null; }
+    return /^image\/(jpeg|png|webp|heic|heif)/.test(f.type) ? shrinkPhoto(f) : f;
+  })).then(function (arr) { arr.forEach(function (f) { if (f) MEDIA[id].push(f); }); drawMedia(id); });
+}
+// photos are resized to max 1600px and saved as JPEG (~200-400 KB) to keep storage small
+function shrinkPhoto(f) {
+  return new Promise(function (ok) {
+    var img = new Image(), url = URL.createObjectURL(f);
+    img.onload = function () {
+      var k = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+      c.toBlob(function (b) { ok(b && b.size < f.size ? new File([b], f.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' }) : f); }, 'image/jpeg', 0.75);
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); ok(f); };
+    img.src = url;
+  });
 }
 function drawMedia(id) {
   $(id + '-list').innerHTML = MEDIA[id].map(function (f, i) {
@@ -183,7 +200,7 @@ function recVoice(id) {
     REC_T = setInterval(function () {
       var sec = Math.round((Date.now() - t0) / 1000);
       btn.textContent = 'Stop recording · ' + Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
-      if (sec >= 300) mr.stop();
+      if (sec >= 180) mr.stop();
     }, 500);
   }).catch(function () { toast('Allow microphone access to record a voice note.'); });
 }
@@ -281,7 +298,7 @@ function checkRow(c) {
 }
 function openTick(id) {
   var c = APP.checks[id];
-  sheet('<h2>' + e(c.task) + '</h2>' + mediaBox('tm', 'Proof: photo, video, voice or file') + '<label>Or a link<input id="tl" placeholder="https://"></label><div id="te"></div><div class="row"><button class="btn" id="tb">Mark done</button><button class="btn sec" onclick="closeSheet()">Cancel</button></div>');
+  sheet('<h2>' + e(c.task) + '</h2>' + mediaBox('tm', 'Proof: photo, voice or file') + '<label>Or a link<input id="tl" placeholder="https://"></label><div id="te"></div><div class="row"><button class="btn" id="tb">Mark done</button><button class="btn sec" onclick="closeSheet()">Cancel</button></div>');
   $('tb').onclick = function () {
     var b = this; busy(b, true);
     stopRec(); uploadFiles(MEDIA.tm, 'checklist/' + id).then(function (f) {
@@ -309,7 +326,7 @@ function openTask(id) {
     if (t.proposal_status === 'Pending') h += '<div class="card"><b>New date asked: ' + e(fmtDate(t.proposed_date)) + '</b><span class="muted">Waiting for the EA.</span></div>';
     if (mine && open) {
       if (t.status === 'Sent') h += '<div class="card"><div class="row"><button class="btn" onclick="act(' + id + ',\'accept\',{},this)">Accept</button></div><div class="row"><input type="date" id="pd" style="max-width:180px"><button class="btn sec" onclick="act(' + id + ',\'propose\',{date:$(\'pd\').value},this)">Accept and propose this date</button></div><span class="muted">You can propose one new date, free, only before accepting.</span></div>';
-      h += '<div class="card"><h2>Mark done</h2>' + mediaBox('dm', 'Proof: photo, video, voice or file') + '<label>Or a proof link<input id="dl" placeholder="https://"></label><button class="btn" id="db">Mark done with proof</button></div>';
+      h += '<div class="card"><h2>Mark done</h2>' + mediaBox('dm', 'Proof: photo, voice or file') + '<label>Or a proof link<input id="dl" placeholder="https://"></label><button class="btn" id="db">Mark done with proof</button></div>';
       h += '<details class="card"><summary style="cursor:pointer;font-weight:600">Blocked by someone, or need more time?</summary>' +
         '<label>Blocked by<select id="bb">' + APP.users.map(function (u) { return '<option>' + e(u.name) + '</option>'; }).join('') + '</select></label><label>What are you waiting for?<input id="bn"></label>' +
         '<button class="btn sec" onclick="act(' + id + ',\'blocked\',{by:$(\'bb\').value,note:$(\'bn\').value},this)">Send to coordinator</button>' +
@@ -352,12 +369,12 @@ VIEWS.new = function () {
     '<label>Related to<select id="nr"><option>Internal</option><option>External</option><option>Project</option></select></label></div>';
   h += '<label>Task<input id="nt" placeholder="Short and specific"></label>';
   h += '<label>Done means (required)<textarea id="nd" rows="3" placeholder="What will be true when this is done? Anyone should be able to check it in one minute."></textarea></label>';
-  h += '<div><div style="font-size:14px;font-weight:600;margin-bottom:6px">Proof needed</div><div class="chips" id="np">' + ['Photo', 'File', 'Link', 'Screenshot', 'Video'].map(function (p) { return '<button type="button" class="pill' + (p === 'Link' ? ' on' : '') + '" onclick="setProof(this,\'' + p + '\')">' + p + '</button>'; }).join('') + '</div></div>';
+  h += '<div><div style="font-size:14px;font-weight:600;margin-bottom:6px">Proof needed</div><div class="chips" id="np">' + ['Photo', 'File', 'Link', 'Screenshot'].map(function (p) { return '<button type="button" class="pill' + (p === 'Link' ? ' on' : '') + '" onclick="setProof(this,\'' + p + '\')">' + p + '</button>'; }).join('') + '</div></div>';
   h += '<div class="grid"><div><div style="font-size:14px;font-weight:600;margin-bottom:6px">Priority</div><div class="seg" id="npr">' + ['High', 'Medium', 'Low'].map(function (p) { return '<button type="button" class="' + (p === 'Medium' ? 'on' : '') + '" onclick="setPrio(this,\'' + p + '\')">' + p + '</button>'; }).join('') + '</div></div>' +
     '<label>Target date<input type="date" id="ndt" min="' + addDays(APP.today, 1) + '"></label></div>';
   h += '<label id="hrw" hidden>Why High? (customer order, metal or money at risk, production stopped, legal date)<input id="nh"></label>';
-  h += mediaBox('nm', 'Voice note, photo or video for the owner (optional, up to ' + APP.maxMB + ' MB each)');
-  h += '<label>Or a link (optional)<input id="nl" placeholder="Drive link for a long video"></label>';
+  h += mediaBox('nm', 'Voice note or photo for the owner (optional, up to ' + APP.maxMB + ' MB each)');
+  h += '<label>Or a link (optional)<input id="nl" placeholder="Drive link (optional)"></label>';
   h += '<div id="ndrop"></div><div id="ne"></div><div class="row"><button class="btn" id="ns">Save and send</button></div></form>';
   h += '<aside class="card" style="flex:1 1 260px;min-width:0" id="nload"><h2>Owner’s load</h2><p class="empty">Choose an owner.</p></aside></div>';
   $('view').innerHTML = h;
