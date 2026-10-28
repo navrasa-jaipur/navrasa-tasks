@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Navrasa Tasks</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=Source+Sans+3:wght@400;600;700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{--bg:#FBF7F0;--card:#fff;--ink:#2A1A1C;--muted:#6B5759;--line:#E6D9C4;--maroon:#7A1F2B;--gold:#7A5A1E;--goldbg:#F5ECD8;--red:#A3262A;--redbg:#F7E1DF;--green:#2F6B3A;--greenbg:#E3F0E2;--chip:#EFE7DA}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 'Source Sans 3',system-ui,sans-serif}
+header{background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.bar{max-width:1000px;margin:0 auto;padding:10px 16px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center}
+.brand{font:700 24px 'Cormorant Garamond',Georgia,serif;color:var(--maroon)}
+nav{display:flex;flex-wrap:wrap;gap:4px;flex:1}
+nav button{font:inherit;font-size:15px;border:none;background:none;padding:9px 12px;border-radius:8px;color:var(--ink);cursor:pointer;min-height:42px}
+nav button.on{background:#F3E4E2;color:var(--maroon);font-weight:700}
+.who{font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.who button{font:inherit;font-size:13px;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--ink)}
+main{max-width:1000px;margin:0 auto;padding:18px 16px 60px;display:flex;flex-direction:column;gap:18px}
+h1{font:700 32px 'Cormorant Garamond',Georgia,serif;color:var(--maroon);margin:0}
+h2{font-size:18px;margin:0}
+.muted{color:var(--muted);font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.list{display:flex;flex-direction:column;gap:10px}
+.task{cursor:pointer;text-align:left;font:inherit;color:inherit}
+.task:hover{border-color:#C9B48F}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;font-weight:700;padding:2px 8px;border-radius:6px;background:var(--chip);color:#5C4A3A}
+.c-high{background:#F3E4E2;color:var(--maroon)}.c-red{background:var(--redbg);color:var(--red)}.c-green{background:var(--greenbg);color:var(--green)}.c-gold{background:var(--goldbg);color:var(--gold)}
+.score{background:var(--maroon);color:#fff;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:6px}
+.score b{font-size:44px;line-height:1;font-variant-numeric:tabular-nums}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+label{display:flex;flex-direction:column;gap:5px;font-size:14px;font-weight:600}
+input,select,textarea{font:inherit;font-weight:400;padding:10px;border:1px solid #D8C8AE;border-radius:8px;background:#fff;color:var(--ink);width:100%}
+textarea{resize:vertical}
+input[type=checkbox]{width:auto}
+.btn{font:inherit;font-weight:700;border:none;border-radius:10px;background:var(--maroon);color:#fff;min-height:44px;padding:0 18px;cursor:pointer}
+.btn.sec{background:#fff;color:var(--ink);border:1px solid #D8C8AE;font-weight:600}
+.btn.ok{background:var(--green)}.btn.bad{background:var(--red)}
+.btn.small{min-height:36px;padding:0 12px;font-size:14px}
+.btn:disabled{opacity:.5;cursor:default}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid #D8C8AE;border-radius:8px;overflow:hidden}
+.seg button{font:inherit;min-height:42px;border:none;background:#fff;cursor:pointer;color:var(--ink)}
+.seg button+button{border-left:1px solid #D8C8AE}
+.seg button.on{background:var(--maroon);color:#fff;font-weight:700}
+.pill{font:inherit;font-size:14px;min-height:38px;padding:0 14px;border-radius:99px;border:1px solid #D8C8AE;background:#fff;cursor:pointer;color:var(--ink)}
+.pill.on{background:var(--maroon);border-color:var(--maroon);color:#fff;font-weight:700}
+.check{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid #F0E6D6}
+.check:first-child{border-top:none}
+.tbl{overflow-x:auto;background:#fff;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
+th{background:var(--goldbg);text-align:left;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:#5C4A3A;padding:9px 12px}
+td{padding:9px 12px;border-top:1px solid #F0E6D6;vertical-align:top}
+.num{font-variant-numeric:tabular-nums}
+.barw{height:10px;background:#F4EDE2;border-radius:99px;overflow:hidden;min-width:80px;flex:1}
+.barw div{height:100%;border-radius:99px}
+.sheet{position:fixed;inset:0;background:rgba(42,26,28,.45);display:flex;justify-content:center;align-items:flex-end;z-index:20}
+.panel{background:var(--bg);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;padding:18px;display:flex;flex-direction:column;gap:12px}
+@media(min-width:700px){.sheet{align-items:center}.panel{border-radius:16px}}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;z-index:30;max-width:90vw}
+.err{background:var(--redbg);color:var(--red);border-radius:10px;padding:10px 12px;font-size:14px}
+.links a{display:block;word-break:break-all;font-size:14px;color:var(--maroon)}
+.empty{color:var(--muted);font-size:14px;padding:6px 0}
+pre.log{white-space:pre-wrap;font-size:12px;color:var(--muted);margin:0}
+.login{max-width:420px;margin:8vh auto;padding:0 16px;display:flex;flex-direction:column;gap:16px}
+.or{text-align:center;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<header id="hdr" hidden><div class="bar"><span class="brand">Navrasa Tasks</span><nav id="nav"></nav><span class="who"><span id="who"></span><button onclick="signOut()">Sign out</button></span></div></header>
+<main id="view"><p class="muted">Loading…</p></main>
+<div id="sheet"></div>
+<script>
+var SB_URL = 'https://lqiqijquuuvkzzbcplxj.supabase.co';
+var SB_KEY = 'sb_publishable_kBZYhLDXRQnGkfJZiSXA9g_AqtUTiRg';
+var STAFF_DOMAIN = 'staff.thenavrasa.com';
+var sb = supabase.createClient(SB_URL, SB_KEY);
+var APP = {};
+
+// ---------- helpers ----------
+function call(fn, args) {
+  return sb.rpc(fn, args || {}).then(function (r) {
+    if (r.error) throw r.error.message;
+    if (r.data && r.data.error) throw r.data.error;
+    return r.data;
+  });
+}
+function e(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function $(id) { return document.getElementById(id); }
+function toast(m) { var t = document.createElement('div'); t.className = 'toast'; t.textContent = m; document.body.appendChild(t); setTimeout(function () { t.remove(); }, 3500); }
+function pct(x) { return x === null || x === undefined ? '–' : (Math.round(x) === 0 ? '0%' : '−' + Math.round(x) + '%'); }
+function fmtDate(s) {
+  if (!s) return ''; s = String(s).replace('T', ' ');
+  var d = new Date(s.slice(0, 10) + 'T00:00:00');
+  return d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }) + (s.length > 10 ? ', ' + s.slice(11, 16) : '');
+}
+function addDays(s, n) { var d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+function busy(btn, on) { if (!btn) return; btn.disabled = on; if (on) { btn.dataset.t = btn.textContent; btn.textContent = 'Saving…'; } else if (btn.dataset.t) btn.textContent = btn.dataset.t; }
+function errBox(id, m) { $(id).innerHTML = '<div class="err">' + e(m) + '</div>'; }
+
+// files go to the private "nas-files" bucket and are stored as "sb:<path>"
+function uploadFiles(input, folder) {
+  var files = input && input.files ? [].slice.call(input.files) : [];
+  return Promise.all(files.map(function (f) {
+    if (f.size > APP.maxMB * 1048576) return Promise.reject(f.name + ' is bigger than ' + APP.maxMB + ' MB. Upload it to Drive and paste the link.');
+    var path = folder + '/' + Date.now() + '-' + f.name.replace(/[^\w.\-]+/g, '_');
+    return sb.storage.from('nas-files').upload(path, f, { contentType: f.type || 'application/octet-stream' }).then(function (r) {
+      if (r.error) throw 'Upload failed for ' + f.name + ': ' + r.error.message;
+      return 'sb:' + path;
+    });
+  }));
+}
+function signLinks(arrs) {
+  var paths = [];
+  arrs.forEach(function (a) { (a || []).forEach(function (x) { if (/^sb:/.test(x)) paths.push(x.slice(3)); }); });
+  if (!paths.length) return Promise.resolve({});
+  return sb.storage.from('nas-files').createSignedUrls(paths, 3600).then(function (r) {
+    var m = {}; (r.data || []).forEach(function (x) { if (x.signedUrl) m[x.path] = x.signedUrl; }); return m;
+  });
+}
+function links(arr, signed) {
+  return (arr || []).map(function (u) {
+    if (/^sb:/.test(u)) { var p = u.slice(3), url = (signed || {})[p]; var name = p.split('/').pop().replace(/^\d+-/, ''); return url ? '<a href="' + e(url) + '" target="_blank" rel="noopener">' + e(name) + '</a>' : '<span>' + e(name) + '</span>'; }
+    return /^https?:/.test(u) ? '<a href="' + e(u) + '" target="_blank" rel="noopener">' + e(u.length > 60 ? u.slice(0, 57) + '…' : u) + '</a>' : '<span>' + e(u) + '</span>';
+  }).join('');
+}
+
+// ---------- sign-in ----------
+function showLogin(msg) {
+  $('hdr').hidden = true;
+  $('view').innerHTML = '<div class="login"><h1>Navrasa Tasks</h1>' + (msg ? '<div class="err">' + e(msg) + '</div>' : '') +
+    '<div class="card"><h2>Office staff</h2><span class="muted">Use your @thenavrasa.com Google account.</span><button class="btn" onclick="googleIn()">Sign in with Google</button></div>' +
+    '<div class="or">or</div><form class="card" onsubmit="return pinIn(event)"><h2>Floor and support staff</h2><label>Staff code<input id="lc" autocomplete="username" autocapitalize="none"></label>' +
+    '<label>6-digit PIN<input id="lp" type="password" inputmode="numeric" maxlength="6" autocomplete="current-password"></label><div id="le"></div><button class="btn" id="lb">Sign in</button></form></div>';
+}
+function googleIn() {
+  sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname, queryParams: { hd: 'thenavrasa.com', prompt: 'select_account' } } })
+    .then(function (r) { if (r.error) showLogin(r.error.message); });
+}
+function pinIn(ev) {
+  ev.preventDefault();
+  var code = $('lc').value.trim().toLowerCase(), pin = $('lp').value.trim(), b = $('lb');
+  if (!code || !/^\d{6}$/.test(pin)) { errBox('le', 'Enter your staff code and 6-digit PIN.'); return false; }
+  busy(b, true);
+  sb.auth.signInWithPassword({ email: code + '@' + STAFF_DOMAIN, password: pin }).then(function (r) {
+    busy(b, false);
+    if (r.error) errBox('le', 'Wrong staff code or PIN. Ask HR to reset it.'); else start();
+  });
+  return false;
+}
+function signOut() { sb.auth.signOut().then(function () { APP = {}; showLogin(); }); }
+
+// ---------- task display ----------
+function stageChip(t) {
+  if (t.status === 'Sent') return '<span class="chip c-gold">Accept by ' + e(fmtDate(t.accept_by)) + '</span>';
+  if (t.status === 'QC pending') return '<span class="chip c-gold">Done · waiting for check</span>';
+  if (t.status === 'Rework') return '<span class="chip c-red">Rework by ' + e(fmtDate(t.current_due)) + '</span>';
+  if (/Red Flag/.test(t.status)) return '<span class="chip c-red">' + e(t.status) + '</span>';
+  if (t.status === 'Closed') return '<span class="chip c-green">Closed · ' + e(pct(+t.miss_pct)) + '</span>';
+  if (t.status === 'Dropped') return '<span class="chip">Dropped</span>';
+  if (t.stage === 'Rev 1' || t.stage === 'Rev 2') return '<span class="chip c-red">' + e(t.stage) + ' · due ' + e(fmtDate(t.current_due)) + '</span>';
+  return '<span class="chip c-green">Due ' + e(fmtDate(t.current_due)) + '</span>';
+}
+function prioChip(p) { return '<span class="chip ' + (p === 'High' ? 'c-high' : '') + '">' + e(p) + '</span>'; }
+function taskCard(t, extra) {
+  APP.tasks[t.id] = t;
+  return '<button class="card task" onclick="openTask(' + t.id + ')"><div class="chips">' + prioChip(t.priority) + stageChip(t) +
+    (t.type === 'Team' ? '<span class="chip">Team task</span>' : '') + (t.block_status === 'Claimed' ? '<span class="chip c-gold">Blocked – PC checking</span>' : '') +
+    (t.attachments && t.attachments.length ? '<span class="chip">Has voice/photo</span>' : '') +
+    '</div><span style="font-weight:600">' + e(t.task) + '</span><span class="muted">' + e(extra || ('From ' + t.given_by + ' · proof: ' + t.proof_type)) + '</span></button>';
+}
+
+// ---------- navigation ----------
+var VIEWS = {};
+function canPeople() { return APP.me.access === 'Admin' || APP.me.access === 'EA' || APP.me.department === 'HR'; }
+function tabs() {
+  var a = APP.me.access, list = [['day', 'My Day']];
+  if (a === 'Admin' || a === 'EA') list.push(['new', 'New task'], ['checks', 'Checks'], ['board', 'Monday board'], ['setup', 'Checklists']);
+  else if (a === 'PC') list.push(['checks', 'Checks'], ['board', 'Board'], ['setup', 'Checklists']);
+  else if (a === 'HOD' || APP.isTeamLead) list.push(['new', 'Team task'], ['team', 'My team'], ['checks', 'Checks'], ['board', 'Scores'], ['setup', 'Checklists']);
+  else list.push(['board', 'My score']);
+  if (canPeople()) list.push(['people', 'People']);
+  return list;
+}
+function go(v) {
+  APP.view = v; APP.tasks = {};
+  $('nav').innerHTML = tabs().map(function (x) { return '<button class="' + (x[0] === v ? 'on' : '') + '" onclick="go(\'' + x[0] + '\')">' + x[1] + '</button>'; }).join('');
+  $('view').innerHTML = '<p class="muted">Loading…</p>';
+  VIEWS[v]().catch(function (m) { $('view').innerHTML = '<div class="err">' + e(m) + '</div>'; });
+}
+
+// ---------- My Day ----------
+VIEWS.day = function () {
+  return call('api_my_day').then(function (d) {
+    var open = d.tasks.filter(function (t) { return ['Sent', 'Accepted', 'Rework', 'QC pending'].indexOf(t.status) > -1; });
+    var due = open.filter(function (t) { return t.current_due <= APP.today || t.status === 'Sent' || t.status === 'Rework'; });
+    var later = open.filter(function (t) { return due.indexOf(t) < 0; });
+    var closed = d.tasks.filter(function (t) { return open.indexOf(t) < 0; });
+    var diff = (d.score !== null && d.last !== null) ? Math.round(d.last - d.score) : null;
+    var h = '<div><h1>' + e(APP.me.name) + '’s day</h1><span class="muted">' + e(fmtDate(APP.today)) + (APP.working ? '' : ' · holiday or weekly off') + '</span></div>';
+    h += '<section class="score"><div class="row" style="justify-content:space-between"><span>My score this week</span><span>Last week ' + pct(d.last) + '</span></div>' +
+      '<div class="row"><b>' + pct(d.score) + '</b>' + (diff !== null ? '<span class="chip" style="background:#9A3A46;color:#fff">' + (diff >= 0 ? diff + ' points better' : (-diff) + ' points worse') + '</span>' : '') + '</div>' +
+      '<span style="font-size:13px">Share of my work not done on time, weighted by priority. 0% is a perfect week.</span></section>';
+    h += '<section class="list"><h2>Due now</h2>' + (due.length ? due.map(function (t) { return taskCard(t); }).join('') : '<p class="empty">Nothing due. Good.</p>') + '</section>';
+    APP.checks = {}; d.checks.forEach(function (c) { APP.checks[c.id] = c; });
+    h += '<section class="card"><h2>My checklist</h2>' + (d.checks.length ? d.checks.map(checkRow).join('') : '<p class="empty">No checklist items today.</p>') + '</section>';
+    if (later.length) h += '<section class="list"><h2>Coming up</h2>' + later.map(function (t) { return taskCard(t); }).join('') + '</section>';
+    if (closed.length) h += '<section class="list"><h2>Recently closed</h2>' + closed.map(function (t) { return taskCard(t); }).join('') + '</section>';
+    $('view').innerHTML = h;
+  });
+};
+function checkRow(c) {
+  var closed = ['Done', 'Done late', 'False tick', 'Not done'].indexOf(c.status) > -1;
+  var cls = c.status === 'Done' ? 'c-green' : c.status === 'Done late' ? 'c-gold' : (c.status === 'Overdue' || c.status === 'Not done' || c.status === 'False tick') ? 'c-red' : '';
+  return '<div class="check"><div style="flex:1;display:flex;flex-direction:column;gap:2px"><span>' + e(c.task) + '</span><span class="muted">' + e(c.frequency) + ' · due ' + e(fmtDate(c.due_date)) + ', ' + e(String(c.due_time).slice(0, 5)) + '</span></div>' +
+    (closed ? '<span class="chip ' + cls + '">' + e(c.status) + '</span>' : (c.status === 'Overdue' ? '<span class="chip c-red">Overdue</span>' : '') + '<button class="btn sec small" onclick="openTick(' + c.id + ')">Tick with proof</button>') + '</div>';
+}
+function openTick(id) {
+  var c = APP.checks[id];
+  sheet('<h2>' + e(c.task) + '</h2><span class="muted">Proof: photo, file or link</span><label>Photo or file<input type="file" id="tf" accept="image/*,video/*,audio/*,application/pdf" multiple></label><label>Or a link<input id="tl" placeholder="https://"></label><div id="te"></div><div class="row"><button class="btn" id="tb">Mark done</button><button class="btn sec" onclick="closeSheet()">Cancel</button></div>');
+  $('tb').onclick = function () {
+    var b = this; busy(b, true);
+    uploadFiles($('tf'), 'checklist/' + id).then(function (f) {
+      var proof = f.concat($('tl').value.trim() ? [$('tl').value.trim()] : []);
+      return call('api_tick', { p_log: id, p_proof: proof });
+    }).then(function (r) { closeSheet(); toast(r.status === 'Done' ? 'Done on time' : 'Done late (counts 50%)'); go('day'); })
+      .catch(function (m) { busy(b, false); errBox('te', m); });
+  };
+}
+
+// ---------- task panel ----------
+function sheet(html) { $('sheet').innerHTML = '<div class="sheet" onclick="if(event.target===this)closeSheet()"><div class="panel">' + html + '</div></div>'; }
+function closeSheet() { $('sheet').innerHTML = ''; }
+function openTask(id) {
+  var t = APP.tasks[id]; if (!t) return;
+  signLinks([t.attachments, t.proof]).then(function (sg) {
+    var mine = t.owner === APP.me.name, open = ['Sent', 'Accepted', 'Rework'].indexOf(t.status) > -1;
+    var h = '<div class="chips">' + prioChip(t.priority) + stageChip(t) + '<span class="chip">T' + t.id + '</span></div><h1 style="font-size:26px">' + e(t.task) + '</h1>';
+    h += '<div class="card"><span class="chip c-gold" style="align-self:flex-start">Done means</span><span>' + e(t.done_means) + '</span><span class="muted">Proof needed: ' + e(t.proof_type) + '</span></div>';
+    if (t.attachments && t.attachments.length) h += '<div class="card links"><b>Voice note / photo from ' + e(t.given_by) + '</b>' + links(t.attachments, sg) + '</div>';
+    h += '<div class="grid" style="font-size:14px"><div><span class="muted">Owner</span><br><b>' + e(t.owner) + '</b></div><div><span class="muted">Given by</span><br><b>' + e(t.given_by) + '</b></div>' +
+      '<div><span class="muted">First date</span><br><b>' + e(fmtDate(t.target_date)) + '</b></div><div><span class="muted">Current due</span><br><b>' + e(fmtDate(t.current_due)) + ', 7 PM</b></div></div>';
+    if (t.rework_note) h += '<div class="err">Rework: ' + e(t.rework_note) + '</div>';
+    if (t.proof && t.proof.length) h += '<div class="card links"><b>Proof</b>' + links(t.proof, sg) + '</div>';
+    if (t.proposal_status === 'Pending') h += '<div class="card"><b>New date asked: ' + e(fmtDate(t.proposed_date)) + '</b><span class="muted">Waiting for the EA.</span></div>';
+    if (mine && open) {
+      if (t.status === 'Sent') h += '<div class="card"><div class="row"><button class="btn" onclick="act(' + id + ',\'accept\',{},this)">Accept</button></div><div class="row"><input type="date" id="pd" style="max-width:180px"><button class="btn sec" onclick="act(' + id + ',\'propose\',{date:$(\'pd\').value},this)">Accept and propose this date</button></div><span class="muted">You can propose one new date, free, only before accepting.</span></div>';
+      h += '<div class="card"><h2>Mark done</h2><label>Proof link<input id="dl" placeholder="https://"></label><label>Or photo / file / video<input type="file" id="df" multiple></label><button class="btn" id="db">Mark done with proof</button></div>';
+      h += '<details class="card"><summary style="cursor:pointer;font-weight:600">Blocked by someone, or need more time?</summary>' +
+        '<label>Blocked by<select id="bb">' + APP.users.map(function (u) { return '<option>' + e(u.name) + '</option>'; }).join('') + '</select></label><label>What are you waiting for?<input id="bn"></label>' +
+        '<button class="btn sec" onclick="act(' + id + ',\'blocked\',{by:$(\'bb\').value,note:$(\'bn\').value},this)">Send to coordinator</button>' +
+        (t.stage === 'Original' && !t.extension_used && t.status !== 'Sent' ? '<label>Ask once for a new date (at least 24 hours before the deadline, counts 20%)<input type="date" id="xd"></label><button class="btn sec" onclick="act(' + id + ',\'extension\',{date:$(\'xd\').value},this)">Ask new date</button>' : '') + '</details>';
+    }
+    h += '<div id="pe"></div><details><summary class="muted" style="cursor:pointer">History</summary><pre class="log">' + e(t.log) + '</pre></details><button class="btn sec" onclick="closeSheet()">Close</button>';
+    sheet(h);
+    if ($('db')) $('db').onclick = function () {
+      var b = this; busy(b, true);
+      uploadFiles($('df'), 'proof/T' + id).then(function (f) {
+        var proof = f.concat($('dl').value.trim() ? [$('dl').value.trim()] : []);
+        return call('api_task_action', { p_id: id, p_action: 'done', p_data: { proof: proof } });
+      }).then(function () { closeSheet(); toast('Marked done. Waiting for quality check.'); go(APP.view); })
+        .catch(function (m) { busy(b, false); errBox('pe', m); });
+    };
+  });
+}
+function act(id, action, data, btn) {
+  busy(btn, true);
+  call('api_task_action', { p_id: id, p_action: action, p_data: data }).then(function () { closeSheet(); toast('Saved'); go(APP.view); })
+    .catch(function (m) { busy(btn, false); errBox('pe', m); });
+}
+function decide(id, action, data, btn) {
+  busy(btn, true);
+  return call('api_decide', { p_id: id, p_action: action, p_data: data || {} }).then(function () { toast('Saved'); go(APP.view); })
+    .catch(function (m) { busy(btn, false); toast(m); });
+}
+
+// ---------- new task ----------
+var NT = {};
+VIEWS.new = function () {
+  var admin = APP.me.access === 'Admin' || APP.me.access === 'EA';
+  var owners = APP.users.filter(function (u) { return admin || u.hod === APP.me.name; });
+  NT = { priority: 'Medium', proof: 'Link', type: admin ? 'Company' : 'Team', drop: '' };
+  var h = '<div><h1>' + (admin ? 'New task' : 'New team task') + '</h1><span class="muted">' + (admin ? 'It can’t be sent until every field is filled.' : 'Team tasks stay between you and your team. They don’t count in the company score.') + '</span></div>';
+  h += '<div class="row" style="align-items:flex-start;gap:18px"><form class="card" style="flex:999 1 520px;min-width:0;gap:14px" onsubmit="return false">';
+  if (admin) h += '<div class="grid"><label>Given by<select id="ng">' + APP.users.filter(function (u) { return ['Admin', 'HOD', 'EA'].indexOf(u.access) > -1; }).map(function (u) { return '<option' + (u.name === 'Ashwyn Sir' ? ' selected' : '') + '>' + e(u.name) + '</option>'; }).join('') + '</select></label>' +
+    '<label>Kind<select id="nk" onchange="NT.type=this.value"><option>Company</option><option>Team</option></select></label></div>';
+  h += '<div class="grid"><label>Owner (one person)<select id="no" onchange="loadOwner()"><option value="">Choose…</option>' + owners.map(function (u) { return '<option value="' + e(u.name) + '">' + e(u.name) + (u.role ? ' · ' + e(u.role) : '') + '</option>'; }).join('') + '</select></label>' +
+    '<label>Related to<select id="nr"><option>Internal</option><option>External</option><option>Project</option></select></label></div>';
+  h += '<label>Task<input id="nt" placeholder="Short and specific"></label>';
+  h += '<label>Done means (required)<textarea id="nd" rows="3" placeholder="What will be true when this is done? Anyone should be able to check it in one minute."></textarea></label>';
+  h += '<div><div style="font-size:14px;font-weight:600;margin-bottom:6px">Proof needed</div><div class="chips" id="np">' + ['Photo', 'File', 'Link', 'Screenshot', 'Video'].map(function (p) { return '<button type="button" class="pill' + (p === 'Link' ? ' on' : '') + '" onclick="setProof(this,\'' + p + '\')">' + p + '</button>'; }).join('') + '</div></div>';
+  h += '<div class="grid"><div><div style="font-size:14px;font-weight:600;margin-bottom:6px">Priority</div><div class="seg" id="npr">' + ['High', 'Medium', 'Low'].map(function (p) { return '<button type="button" class="' + (p === 'Medium' ? 'on' : '') + '" onclick="setPrio(this,\'' + p + '\')">' + p + '</button>'; }).join('') + '</div></div>' +
+    '<label>Target date<input type="date" id="ndt" min="' + addDays(APP.today, 1) + '"></label></div>';
+  h += '<label id="hrw" hidden>Why High? (customer order, metal or money at risk, production stopped, legal date)<input id="nh"></label>';
+  h += '<label>Voice note, photo or video for the owner (optional, up to ' + APP.maxMB + ' MB each)<input type="file" id="nf" accept="audio/*,image/*,video/*,application/pdf" multiple></label>';
+  h += '<label>Or a link (optional)<input id="nl" placeholder="Drive link for a long video"></label>';
+  h += '<div id="ndrop"></div><div id="ne"></div><div class="row"><button class="btn" id="ns">Save and send</button></div></form>';
+  h += '<aside class="card" style="flex:1 1 260px;min-width:0" id="nload"><h2>Owner’s load</h2><p class="empty">Choose an owner.</p></aside></div>';
+  $('view').innerHTML = h;
+  $('ns').onclick = submitTask;
+  return Promise.resolve();
+};
+function setProof(b, p) { NT.proof = p; [].forEach.call($('np').children, function (x) { x.classList.toggle('on', x === b); }); }
+function setPrio(b, p) { NT.priority = p; [].forEach.call($('npr').children, function (x) { x.classList.toggle('on', x === b); }); $('hrw').hidden = p !== 'High'; }
+function loadOwner() {
+  var o = $('no').value; if (!o) return;
+  call('api_owner_load', { p_owner: o }).then(function (l) {
+    $('nload').innerHTML = '<h2>' + e(o) + '’s load</h2><div class="row" style="justify-content:space-between"><span>Open High tasks</span><b>' + l.highs.length + ' of ' + APP.highCap + '</b></div>' +
+      '<div class="barw"><div style="width:' + Math.min(100, l.highs.length / APP.highCap * 100) + '%;background:#A57E33"></div></div>' +
+      '<div class="row" style="justify-content:space-between"><span>All open company tasks</span><b>' + l.open + '</b></div><div class="row" style="justify-content:space-between"><span>Last week’s score</span><b>' + pct(l.last) + '</b></div>';
+  });
+}
+function submitTask() {
+  var b = $('ns'); busy(b, true); $('ne').innerHTML = '';
+  uploadFiles($('nf'), 'brief/' + APP.today).then(function (files) {
+    return call('api_create_task', { f: {
+      type: NT.type, givenBy: $('ng') ? $('ng').value : '', owner: $('no').value, related: $('nr').value, task: $('nt').value.trim(),
+      doneMeans: $('nd').value.trim(), proofType: NT.proof, priority: NT.priority, highReason: $('nh').value.trim(), date: $('ndt').value,
+      attachments: files.concat($('nl').value.trim() ? [$('nl').value.trim()] : []), dropId: NT.drop
+    } });
+  }).then(function (r) {
+    busy(b, false);
+    if (r.needDrop) {
+      $('ndrop').innerHTML = '<div class="err">' + e($('no').value) + ' already has ' + r.needDrop.length + ' open High tasks. Choose one to change to Medium, then press Save again:</div>' +
+        r.needDrop.map(function (x) { return '<label style="flex-direction:row;gap:8px;font-weight:400"><input type="radio" name="dr" onchange="NT.drop=\'' + x.id + '\'"> ' + e(x.task) + ' (due ' + e(x.due) + ')</label>'; }).join('');
+      return;
+    }
+    toast('Sent to ' + $('no').value + ' (T' + r.id + ')'); go('new');
+  }).catch(function (m) { busy(b, false); errBox('ne', m); });
+}
+
+// ---------- checks ----------
+VIEWS.checks = function () {
+  return call('api_queues').then(function (q) {
+    return signLinks(q.qc.map(function (t) { return t.proof; }).concat(q.spot.map(function (c) { return c.proof; }))).then(function (sg) {
+      var h = '<div><h1>Checks</h1><span class="muted">Compare the proof with "Done means". Anything not checked within 24 working hours is approved automatically and counted against the checker.</span></div>';
+      h += '<section class="list"><h2>Quality check (' + q.qc.length + ')</h2>' + (q.qc.length ? q.qc.map(function (t) {
+        return '<div class="card"><div class="chips">' + prioChip(t.priority) + '<span class="chip ' + (t.deadline_result === 'On time' ? 'c-green' : 'c-red') + '">' + e(t.deadline_result || 'On time') + '</span><span class="chip">' + e(t.owner) + '</span><span class="chip c-gold">Auto-approves ' + e(fmtDate(t.auto_at)) + '</span></div>' +
+          '<b>' + e(t.task) + '</b><span class="muted">Done means: ' + e(t.done_means) + '</span><div class="links">' + links(t.proof, sg) + '</div>' +
+          '<div class="row"><button class="btn ok small" onclick="decide(' + t.id + ',\'qcOk\',{},this)">Quality OK</button><input id="rn' + t.id + '" placeholder="What doesn’t match Done means?" style="flex:1;min-width:200px"><button class="btn sec small" onclick="decide(' + t.id + ',\'rework\',{note:$(\'rn' + t.id + '\').value},this)">Rework</button><button class="btn bad small" onclick="decide(' + t.id + ',\'falseDone\',{note:$(\'rn' + t.id + '\').value},this)">Not actually done</button></div></div>';
+      }).join('') : '<p class="empty">Nothing waiting.</p>') + '</section>';
+      if (q.dates.length) h += '<section class="list"><h2>New date requests (' + q.dates.length + ')</h2>' + q.dates.map(function (t) {
+        return '<div class="card"><b>' + e(t.task) + '</b><span class="muted">' + e(t.owner) + ' · ' + e(t.proposal_kind) + ' · from ' + e(fmtDate(t.current_due)) + ' to ' + e(fmtDate(t.proposed_date)) + '</span><div class="row"><button class="btn ok small" onclick="decide(' + t.id + ',\'proposalYes\',{},this)">Approve</button><button class="btn sec small" onclick="decide(' + t.id + ',\'proposalNo\',{},this)">Keep original date</button></div></div>';
+      }).join('') + '</section>';
+      if (q.blocks.length || APP.me.access === 'PC') h += '<section class="list"><h2>"Blocked by" claims (' + q.blocks.length + ')</h2>' + (q.blocks.length ? q.blocks.map(function (t) {
+        return '<div class="card"><b>' + e(t.task) + '</b><span class="muted">' + e(t.owner) + ' says blocked by ' + e(t.blocked_by) + ': ' + e(t.block_note) + '</span><div class="row"><label style="flex-direction:row;align-items:center;gap:8px">New due<input type="date" id="bd' + t.id + '" style="width:170px"></label>' +
+          '<button class="btn ok small" onclick="decide(' + t.id + ',\'blockYes\',{date:$(\'bd' + t.id + '\').value},this)">Genuine: pause and give ' + e(t.blocked_by) + ' a task</button><button class="btn sec small" onclick="decide(' + t.id + ',\'blockNo\',{},this)">Not genuine</button></div></div>';
+      }).join('') : '<p class="empty">No claims.</p>') + '</section>';
+      if (q.spot.length) h += '<section class="card"><h2>Checklist spot-checks this week</h2><span class="muted">2 random items per person. Look at the proof and at the place itself.</span>' + q.spot.map(function (c) {
+        return '<div class="check"><div style="flex:1"><b>' + e(c.owner) + '</b> · ' + e(c.task) + '<div class="links">' + links(c.proof, sg) + '</div></div><button class="btn ok small" onclick="spot(' + c.id + ',true,this)">Pass</button><button class="btn bad small" onclick="spot(' + c.id + ',false,this)">Fail</button></div>';
+      }).join('') + '</section>';
+      if (q.redFlags.length) h += '<section class="list"><h2>Red Flags for Monday (' + q.redFlags.length + ')</h2><span class="muted">The owner says one new date. No reasons.</span>' + q.redFlags.map(rfCard).join('') + '</section>';
+      $('view').innerHTML = h;
+    });
+  });
+};
+function spot(id, pass, b) { busy(b, true); call('api_spot', { p_log: id, p_pass: pass }).then(function () { toast('Saved'); go('checks'); }).catch(function (m) { busy(b, false); toast(m); }); }
+function rfCard(t) {
+  return '<div class="card"><b>' + e(t.task) + '</b><span class="muted">' + e(t.owner) + ' · ' + e(t.priority) + ' · first due ' + e(fmtDate(t.target_date)) + '</span><div class="row">' +
+    '<label style="flex-direction:row;align-items:center;gap:8px">New date<input type="date" id="rd' + t.id + '" style="width:170px"></label>' +
+    '<select id="ro' + t.id + '" style="width:auto">' + APP.users.map(function (u) { return '<option' + (u.name === t.owner ? ' selected' : '') + '>' + e(u.name) + '</option>'; }).join('') + '</select>' +
+    '<button class="btn small" onclick="decide(' + t.id + ',\'rfKeep\',{date:$(\'rd' + t.id + '\').value},this)">Keep</button>' +
+    '<button class="btn sec small" onclick="decide(' + t.id + ',\'rfReassign\',{date:$(\'rd' + t.id + '\').value,owner:$(\'ro' + t.id + '\').value},this)">Reassign</button>' +
+    '<button class="btn sec small" onclick="decide(' + t.id + ',\'rfDrop\',{},this)">Drop</button></div></div>';
+}
+
+// ---------- board ----------
+VIEWS.board = function () {
+  return call('api_board', { p_week: APP.boardWeek || null }).then(function (b) {
+    var h = '<div class="row" style="justify-content:space-between;align-items:flex-end"><div><span class="muted">Week of ' + e(fmtDate(b.week)) + '</span><h1>Work not done, by person</h1></div>' +
+      '<div class="row"><button class="btn sec small" onclick="APP.boardWeek=\'' + addDays(b.week, -7) + '\';go(\'board\')">‹ Earlier</button>' +
+      (b.week < b.thisWeek ? '<button class="btn sec small" onclick="APP.boardWeek=\'' + addDays(b.week, 7) + '\';go(\'board\')">Later ›</button>' : '') + '</div></div>';
+    if (b.all) {
+      var best = b.rows.filter(function (r) { return r.change !== null && r.change > 0; }).sort(function (x, y) { return y.change - x.change; }).slice(0, 3);
+      h += '<div class="grid"><div class="score"><b style="font-size:34px">' + pct(b.teamPct) + '</b><span>Whole team</span></div>' +
+        '<div class="card"><b style="font-size:30px;color:var(--red)">' + b.rows.reduce(function (a, r) { return a + r.rf; }, 0) + '</b><span class="muted">Red Flags this week</span></div>' +
+        '<div class="card"><b style="font-size:30px;color:var(--gold)">' + b.rows.reduce(function (a, r) { return a + r.open; }, 0) + '</b><span class="muted">Open in Rev 1 or Rev 2</span></div></div>';
+      if (best.length) h += '<div class="card" style="background:var(--greenbg);border:none;flex-direction:row;flex-wrap:wrap;gap:8px 20px"><b style="color:var(--green)">Most improved</b>' + best.map(function (r) { return '<span>' + e(r.person) + ' <b>+' + r.change + ' pts</b></span>'; }).join('') + '</div>';
+    }
+    h += '<div class="tbl"><table><thead><tr><th>Person</th><th style="width:30%">Score</th><th>Tasks</th><th>Checklist</th><th>Last week</th><th>Change</th><th>In revision</th><th>Red Flags</th></tr></thead><tbody>' +
+      (b.rows.length ? b.rows.map(function (r) {
+        var m = r.score === null ? 0 : Math.min(100, r.score * 2), col = r.score === null ? '#ccc' : r.score <= 10 ? '#2F6B3A' : r.score <= 20 ? '#A57E33' : '#A3262A';
+        return '<tr><td><b>' + e(r.person) + '</b><br><span class="muted">' + e(r.role) + '</span></td><td><div class="row" style="flex-wrap:nowrap"><b class="num" style="width:48px;text-align:right">' + pct(r.score) + '</b><div class="barw"><div style="width:' + m + '%;background:' + col + '"></div></div></div>' + (r.low ? '<span class="muted">Low load</span>' : '') + '</td>' +
+          '<td class="num">' + pct(r.task_pct) + '</td><td class="num">' + pct(r.check_pct) + '</td><td class="num">' + pct(r.last) + '</td><td style="font-weight:700;color:' + (r.change === null ? 'inherit' : r.change >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (r.change === null ? '–' : r.change >= 0 ? '▲ ' + r.change : '▼ ' + (-r.change)) + '</td><td class="num">' + r.open + '</td><td class="num" style="font-weight:700;color:' + (r.rf ? 'var(--red)' : 'inherit') + '">' + r.rf + '</td></tr>';
+      }).join('') : '<tr><td colspan="8" class="empty">No scores for this week yet.</td></tr>') + '</tbody></table></div>';
+    h += '<p class="muted">Score = tasks and checklists, half each. Tasks are weighted High 3, Medium 2, Low 1.</p>';
+    $('view').innerHTML = h;
+  });
+};
+
+// ---------- HOD team ----------
+VIEWS.team = function () {
+  return call('api_team').then(function (d) {
+    var h = '<div><h1>My team</h1><span class="muted">If you pass a company task to your team, it stays in your name.</span></div>';
+    h += '<section class="list"><h2>My company tasks · count in my score</h2>' + (d.mine.length ? d.mine.map(function (t) { return taskCard(t); }).join('') : '<p class="empty">None open.</p>') + '</section>';
+    h += '<section class="list"><h2>Team tasks I gave · not in company score</h2>' + (d.given.length ? d.given.map(function (t) { return taskCard(t, 'To ' + t.owner); }).join('') : '<p class="empty">None open.</p>') + '</section>';
+    h += '<section class="card"><h2>Team checklists today</h2>' + (d.team.length ? d.team.map(function (n) {
+      var c = d.checks[n] || { done: 0, total: 0, open: [] }, w = c.total ? c.done / c.total * 100 : 0;
+      return '<div class="check" style="flex-direction:column;gap:4px"><div class="row" style="justify-content:space-between;width:100%"><b>' + e(n) + '</b><span class="num">' + c.done + ' of ' + c.total + '</span></div><div class="barw" style="width:100%"><div style="width:' + w + '%;background:' + (w === 100 ? '#2F6B3A' : w >= 60 ? '#A57E33' : '#A3262A') + '"></div></div>' + (c.open.length ? '<span class="muted">Open: ' + e(c.open.join(', ')) + '</span>' : '') + '</div>';
+    }).join('') : '<p class="empty">Nobody has you as HOD in the people list yet.</p>') + '</section>';
+    $('view').innerHTML = h;
+  });
+};
+
+// ---------- checklist set-up ----------
+VIEWS.setup = function () {
+  return call('api_checklists', { p_dept: APP.setupDept || null }).then(function (rows) {
+    APP.cl = {}; rows.forEach(function (r) { APP.cl[r.id] = r; });
+    var depts = {}; APP.users.forEach(function (u) { if (u.department) depts[u.department] = 1; }); rows.forEach(function (r) { if (r.department) depts[r.department] = 1; });
+    var on = rows.filter(function (r) { return r.active; }).length;
+    var h = '<div class="row" style="justify-content:space-between;align-items:flex-end"><div><h1>Checklists</h1><span class="muted">' + on + ' of ' + rows.length + ' switched on. Give each item an owner and switch it on when the HOD agrees.</span></div>' +
+      '<div class="row"><select id="sdep" style="width:auto" onchange="APP.setupDept=this.value||null;go(\'setup\')"><option value="">All departments</option>' + Object.keys(depts).sort().map(function (d) { return '<option' + (d === APP.setupDept ? ' selected' : '') + '>' + e(d) + '</option>'; }).join('') + '</select>' +
+      '<button class="btn small" onclick="editCl()">Add item</button></div></div>';
+    h += '<div class="tbl"><table><thead><tr><th>On</th><th>Item</th><th>Owner</th><th>How often</th><th>Due</th><th></th></tr></thead><tbody>' + rows.map(function (r) {
+      return '<tr><td>' + (r.active ? '<span class="chip c-green">On</span>' : '<span class="chip">Off</span>') + '</td><td>' + e(r.task) + '<br><span class="muted">' + e(r.role || '') + ' · proof: ' + e(r.proof_type || '') + '</span></td><td>' + (r.owner ? e(r.owner) : '<span class="muted">No owner</span>') + '</td>' +
+        '<td>' + e(r.frequency) + '</td><td class="num">' + e((r.due_day ? r.due_day + (r.months ? ' (months ' + r.months + ')' : '') + ', ' : '') + String(r.due_time).slice(0, 5)) + '</td><td><button class="btn sec small" onclick="editCl(' + r.id + ')">Edit</button></td></tr>';
+    }).join('') + '</tbody></table></div>';
+    $('view').innerHTML = h;
+  });
+};
+function editCl(id) {
+  var r = id ? APP.cl[id] : { frequency: 'Daily', due_time: '18:00:00', active: false, department: APP.setupDept || APP.me.department };
+  var opt = function (list, v) { return list.map(function (x) { return '<option' + (x === v ? ' selected' : '') + '>' + e(x) + '</option>'; }).join(''); };
+  sheet('<h2>' + (id ? 'Edit checklist item' : 'New checklist item') + '</h2><label>Item<textarea id="ct" rows="2">' + e(r.task || '') + '</textarea></label>' +
+    '<div class="grid"><label>Owner<select id="co"><option value="">No owner yet</option>' + APP.users.map(function (u) { return '<option' + (u.name === r.owner ? ' selected' : '') + '>' + e(u.name) + '</option>'; }).join('') + '</select></label>' +
+    '<label>Role<input id="cr" value="' + e(r.role || '') + '"></label></div>' +
+    '<div class="grid"><label>How often<select id="cf">' + opt(['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly'], r.frequency) + '</select></label>' +
+    '<label>Due day<input id="cd" value="' + e(r.due_day || '') + '" placeholder="Weekly: Mon…Sat. Monthly: 1–31 or Last"></label>' +
+    '<label>Months (quarterly / yearly)<input id="cm" value="' + e(r.months || '') + '" placeholder="e.g. 1,4,7,10"></label>' +
+    '<label>Due time<input id="cti" type="time" value="' + e(String(r.due_time || '18:00').slice(0, 5)) + '"></label></div>' +
+    '<div class="grid"><label>Proof<input id="cp" value="' + e(r.proof_type || '') + '" placeholder="Photo, File, Screenshot…"></label>' +
+    '<label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="cl"' + (r.legal ? ' checked' : '') + '> Legal deadline (move earlier on holidays)</label>' +
+    '<label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="ca"' + (r.active ? ' checked' : '') + '> Switched on</label></div>' +
+    '<div id="ce"></div><div class="row"><button class="btn" id="cs">Save</button><button class="btn sec" onclick="closeSheet()">Cancel</button></div>');
+  $('cs').onclick = function () {
+    var b = this; busy(b, true);
+    call('api_checklist_save', { c: { id: id || '', task: $('ct').value.trim(), owner: $('co').value, role: $('cr').value.trim(), frequency: $('cf').value, due_day: $('cd').value.trim(),
+      months: $('cm').value.trim(), due_time: $('cti').value, proof_type: $('cp').value.trim(), legal: $('cl').checked, active: $('ca').checked, department: r.department || '' } })
+      .then(function () { closeSheet(); toast('Saved'); go('setup'); }).catch(function (m) { busy(b, false); errBox('ce', m); });
+  };
+}
+
+// ---------- people ----------
+VIEWS.people = function () {
+  return call('api_people').then(function (rows) {
+    APP.pp = {}; rows.forEach(function (r) { APP.pp[r.id] = r; });
+    var h = '<div class="row" style="justify-content:space-between;align-items:flex-end"><div><h1>People</h1><span class="muted">Office staff sign in with the Google email written here. Floor staff use a staff code and PIN.</span></div><button class="btn small" onclick="editPerson()">Add person</button></div>';
+    h += '<div class="tbl"><table><thead><tr><th>Name</th><th>Role</th><th>Department</th><th>HOD</th><th>Access</th><th>Login</th><th></th></tr></thead><tbody>' + rows.map(function (r) {
+      var login = r.staff_code ? 'Code ' + r.staff_code : (r.email || '<span style="color:var(--red)">Missing</span>');
+      return '<tr style="' + (r.active ? '' : 'opacity:.5') + '"><td><b>' + e(r.name) + '</b></td><td>' + e(r.role || '') + '</td><td>' + e(r.department || '') + '</td><td>' + e(r.hod || '') + '</td><td>' + e(r.access) + '</td>' +
+        '<td>' + (r.staff_code ? e(login) : (r.email ? e(r.email) : login)) + (r.linked ? ' <span class="chip c-green">signed in</span>' : '') + '</td><td><button class="btn sec small" onclick="editPerson(' + r.id + ')">Edit</button></td></tr>';
+    }).join('') + '</tbody></table></div>';
+    $('view').innerHTML = h;
+  });
+};
+function editPerson(id) {
+  var r = id ? APP.pp[id] : { access: 'Member', active: true };
+  var names = Object.keys(APP.pp).map(function (k) { return APP.pp[k].name; }).sort();
+  sheet('<h2>' + (id ? 'Edit ' + e(r.name) : 'Add person') + '</h2><div class="grid"><label>Name<input id="pn" value="' + e(r.name || '') + '"></label><label>Google email (office staff)<input id="pe2" value="' + e(r.email || '') + '" placeholder="name@thenavrasa.com"></label></div>' +
+    '<div class="grid"><label>Role<input id="pr" value="' + e(r.role || '') + '"></label><label>Department<input id="pd2" value="' + e(r.department || '') + '"></label>' +
+    '<label>HOD<select id="ph"><option value="">None</option>' + names.map(function (n) { return '<option' + (n === r.hod ? ' selected' : '') + '>' + e(n) + '</option>'; }).join('') + '</select></label>' +
+    '<label>Access<select id="pa">' + ['Member', 'HOD', 'PC', 'EA', 'Admin'].map(function (x) { return '<option' + (x === r.access ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></label></div>' +
+    '<label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="pac"' + (r.active ? ' checked' : '') + '> Active</label>' +
+    '<div id="pe"></div><div class="row"><button class="btn" id="psv">Save</button><button class="btn sec" onclick="closeSheet()">Cancel</button></div>' +
+    (id ? '<details class="card"><summary style="cursor:pointer;font-weight:600">Staff code and PIN (for staff without a Google account)</summary><div class="grid"><label>Staff code<input id="sc" value="' + e(r.staff_code || '') + '" placeholder="e.g. guard1"></label><label>New 6-digit PIN<input id="sp" inputmode="numeric" maxlength="6"></label></div><div id="se"></div><button class="btn sec" id="ssv">Save code and PIN</button></details>' : ''));
+  $('psv').onclick = function () {
+    var b = this; busy(b, true);
+    call('api_person_save', { p: { id: id || '', name: $('pn').value, email: $('pe2').value, role: $('pr').value, department: $('pd2').value, hod: $('ph').value, access: $('pa').value, active: $('pac').checked } })
+      .then(function () { closeSheet(); toast('Saved'); go('people'); }).catch(function (m) { busy(b, false); errBox('pe', m); });
+  };
+  if ($('ssv')) $('ssv').onclick = function () {
+    var b = this; busy(b, true);
+    sb.functions.invoke('nas-staff-login', { body: { personId: id, code: $('sc').value, pin: $('sp').value } }).then(function (r) {
+      busy(b, false);
+      var msg = (r.data && r.data.error) || (r.error && r.error.message);
+      if (msg) errBox('se', msg); else { closeSheet(); toast('Login saved. Code: ' + r.data.code); go('people'); }
+    });
+  };
+}
+
+// ---------- start ----------
+function start() {
+  return call('api_boot').then(function (b) {
+    APP.me = b.me; APP.users = b.users; APP.today = b.today; APP.working = b.working; APP.maxMB = b.maxMB; APP.highCap = b.highCap; APP.isTeamLead = b.isTeamLead;
+    $('hdr').hidden = false; $('who').textContent = b.me.name + ' · ' + (b.me.role || b.me.access);
+    go('day');
+  }).catch(function (m) { sb.auth.signOut(); showLogin(m); });
+}
+sb.auth.getSession().then(function (r) {
+  var hashErr = new URLSearchParams(location.hash.slice(1)).get('error_description');
+  if (r.data.session) start(); else showLogin(hashErr);
+});
+</script>
+</body>
+</html>
