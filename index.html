@@ -67,6 +67,12 @@ td{padding:9px 12px;border-top:1px solid #F0E6D6;vertical-align:top}
 pre.log{white-space:pre-wrap;font-size:12px;color:var(--muted);margin:0}
 .login{max-width:420px;margin:8vh auto;padding:0 16px;display:flex;flex-direction:column;gap:16px}
 .or{text-align:center;color:var(--muted);font-size:13px}
+.media{display:flex;flex-wrap:wrap;gap:8px}
+.media label.btn{display:inline-flex;flex-direction:row;align-items:center;font-size:14px;font-weight:600}
+.att{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;font-size:14px;border-top:1px solid #F0E6D6;padding-top:8px}
+.att img,.att video{max-width:160px;max-height:120px;border-radius:8px}
+.att audio{max-width:240px}
+.btn.rec{background:var(--red);color:#fff;border-color:var(--red)}
 </style>
 </head>
 <body>
@@ -102,8 +108,8 @@ function busy(btn, on) { if (!btn) return; btn.disabled = on; if (on) { btn.data
 function errBox(id, m) { $(id).innerHTML = '<div class="err">' + e(m) + '</div>'; }
 
 // files go to the private "nas-files" bucket and are stored as "sb:<path>"
-function uploadFiles(input, folder) {
-  var files = input && input.files ? [].slice.call(input.files) : [];
+function uploadFiles(list, folder) {
+  var files = Array.isArray(list) ? list : (list && list.files ? [].slice.call(list.files) : []);
   return Promise.all(files.map(function (f) {
     if (f.size > APP.maxMB * 1048576) return Promise.reject(f.name + ' is bigger than ' + APP.maxMB + ' MB. Upload it to Drive and paste the link.');
     var path = folder + '/' + Date.now() + '-' + f.name.replace(/[^\w.\-]+/g, '_');
@@ -127,6 +133,58 @@ function links(arr, signed) {
     return /^https?:/.test(u) ? '<a href="' + e(u) + '" target="_blank" rel="noopener">' + e(u.length > 60 ? u.slice(0, 57) + '…' : u) + '</a>' : '<span>' + e(u) + '</span>';
   }).join('');
 }
+
+// ---------- record / capture / choose files ----------
+var MEDIA = {}, REC = null, REC_T = null;
+function mediaBox(id, label) {
+  MEDIA[id] = [];
+  var pick = function (text, accept, capture, multi) {
+    return '<label class="btn sec small">' + text + '<input type="file" hidden' + (accept ? ' accept="' + accept + '"' : '') + (capture ? ' capture="environment"' : '') + (multi ? ' multiple' : '') +
+      ' onchange="addMedia(\'' + id + '\',this)"></label>';
+  };
+  return '<div class="card" style="gap:10px"><b>' + e(label) + '</b><div class="media">' +
+    '<button type="button" class="btn sec small" id="' + id + '-rec" onclick="recVoice(\'' + id + '\')">Record voice</button>' +
+    pick('Take photo', 'image/*', true) + pick('Record video', 'video/*', true) + pick('Choose file', '', false, true) +
+    '</div><div id="' + id + '-list" style="display:flex;flex-direction:column;gap:8px"></div></div>';
+}
+function addMedia(id, input) {
+  [].forEach.call(input.files || [], function (f) { MEDIA[id].push(f); });
+  input.value = ''; drawMedia(id);
+}
+function drawMedia(id) {
+  $(id + '-list').innerHTML = MEDIA[id].map(function (f, i) {
+    var url = URL.createObjectURL(f), t = f.type || '';
+    var prev = /^image/.test(t) ? '<img src="' + url + '" alt="">' : /^video/.test(t) ? '<video src="' + url + '" controls playsinline></video>' : /^audio/.test(t) ? '<audio src="' + url + '" controls></audio>' : '';
+    return '<div class="att">' + prev + '<span style="flex:1;min-width:120px">' + e(f.name) + ' · ' + (f.size / 1048576).toFixed(1) + ' MB' +
+      (f.size > APP.maxMB * 1048576 ? ' <b style="color:var(--red)">too big, max ' + APP.maxMB + ' MB</b>' : '') + '</span>' +
+      '<button type="button" class="btn sec small" onclick="MEDIA[\'' + id + '\'].splice(' + i + ',1);drawMedia(\'' + id + '\')">Remove</button></div>';
+  }).join('');
+}
+function recVoice(id) {
+  var btn = $(id + '-rec');
+  if (REC) { REC.stop(); return; }
+  if (!navigator.mediaDevices || !window.MediaRecorder) { toast('This browser cannot record. Use Choose file instead.'); return; }
+  navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+    var type = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : (MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : '');
+    var mr = new MediaRecorder(stream, type ? { mimeType: type } : undefined), chunks = [], t0 = Date.now();
+    REC = mr;
+    mr.ondataavailable = function (ev) { if (ev.data && ev.data.size) chunks.push(ev.data); };
+    mr.onstop = function () {
+      stream.getTracks().forEach(function (t) { t.stop(); });
+      clearInterval(REC_T); REC = null;
+      var mt = mr.mimeType || type || 'audio/webm', ext = /mp4/.test(mt) ? 'm4a' : 'webm', now = new Date();
+      MEDIA[id].push(new File(chunks, 'voice-note-' + String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0') + '.' + ext, { type: mt }));
+      btn.textContent = 'Record voice'; btn.classList.remove('rec'); drawMedia(id);
+    };
+    mr.start(); btn.classList.add('rec');
+    REC_T = setInterval(function () {
+      var sec = Math.round((Date.now() - t0) / 1000);
+      btn.textContent = 'Stop recording · ' + Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+      if (sec >= 300) mr.stop();
+    }, 500);
+  }).catch(function () { toast('Allow microphone access to record a voice note.'); });
+}
+function stopRec() { if (REC) REC.stop(); }
 
 // ---------- sign-in ----------
 function showLogin(msg) {
@@ -220,10 +278,10 @@ function checkRow(c) {
 }
 function openTick(id) {
   var c = APP.checks[id];
-  sheet('<h2>' + e(c.task) + '</h2><span class="muted">Proof: photo, file or link</span><label>Photo or file<input type="file" id="tf" accept="image/*,video/*,audio/*,application/pdf" multiple></label><label>Or a link<input id="tl" placeholder="https://"></label><div id="te"></div><div class="row"><button class="btn" id="tb">Mark done</button><button class="btn sec" onclick="closeSheet()">Cancel</button></div>');
+  sheet('<h2>' + e(c.task) + '</h2>' + mediaBox('tm', 'Proof: photo, video, voice or file') + '<label>Or a link<input id="tl" placeholder="https://"></label><div id="te"></div><div class="row"><button class="btn" id="tb">Mark done</button><button class="btn sec" onclick="closeSheet()">Cancel</button></div>');
   $('tb').onclick = function () {
     var b = this; busy(b, true);
-    uploadFiles($('tf'), 'checklist/' + id).then(function (f) {
+    stopRec(); uploadFiles(MEDIA.tm, 'checklist/' + id).then(function (f) {
       var proof = f.concat($('tl').value.trim() ? [$('tl').value.trim()] : []);
       return call('api_tick', { p_log: id, p_proof: proof });
     }).then(function (r) { closeSheet(); toast(r.status === 'Done' ? 'Done on time' : 'Done late (counts 50%)'); go('day'); })
@@ -233,7 +291,7 @@ function openTick(id) {
 
 // ---------- task panel ----------
 function sheet(html) { $('sheet').innerHTML = '<div class="sheet" onclick="if(event.target===this)closeSheet()"><div class="panel">' + html + '</div></div>'; }
-function closeSheet() { $('sheet').innerHTML = ''; }
+function closeSheet() { stopRec(); $('sheet').innerHTML = ''; }
 function openTask(id) {
   var t = APP.tasks[id]; if (!t) return;
   signLinks([t.attachments, t.proof]).then(function (sg) {
@@ -248,7 +306,7 @@ function openTask(id) {
     if (t.proposal_status === 'Pending') h += '<div class="card"><b>New date asked: ' + e(fmtDate(t.proposed_date)) + '</b><span class="muted">Waiting for the EA.</span></div>';
     if (mine && open) {
       if (t.status === 'Sent') h += '<div class="card"><div class="row"><button class="btn" onclick="act(' + id + ',\'accept\',{},this)">Accept</button></div><div class="row"><input type="date" id="pd" style="max-width:180px"><button class="btn sec" onclick="act(' + id + ',\'propose\',{date:$(\'pd\').value},this)">Accept and propose this date</button></div><span class="muted">You can propose one new date, free, only before accepting.</span></div>';
-      h += '<div class="card"><h2>Mark done</h2><label>Proof link<input id="dl" placeholder="https://"></label><label>Or photo / file / video<input type="file" id="df" multiple></label><button class="btn" id="db">Mark done with proof</button></div>';
+      h += '<div class="card"><h2>Mark done</h2>' + mediaBox('dm', 'Proof: photo, video, voice or file') + '<label>Or a proof link<input id="dl" placeholder="https://"></label><button class="btn" id="db">Mark done with proof</button></div>';
       h += '<details class="card"><summary style="cursor:pointer;font-weight:600">Blocked by someone, or need more time?</summary>' +
         '<label>Blocked by<select id="bb">' + APP.users.map(function (u) { return '<option>' + e(u.name) + '</option>'; }).join('') + '</select></label><label>What are you waiting for?<input id="bn"></label>' +
         '<button class="btn sec" onclick="act(' + id + ',\'blocked\',{by:$(\'bb\').value,note:$(\'bn\').value},this)">Send to coordinator</button>' +
@@ -258,7 +316,7 @@ function openTask(id) {
     sheet(h);
     if ($('db')) $('db').onclick = function () {
       var b = this; busy(b, true);
-      uploadFiles($('df'), 'proof/T' + id).then(function (f) {
+      stopRec(); uploadFiles(MEDIA.dm, 'proof/T' + id).then(function (f) {
         var proof = f.concat($('dl').value.trim() ? [$('dl').value.trim()] : []);
         return call('api_task_action', { p_id: id, p_action: 'done', p_data: { proof: proof } });
       }).then(function () { closeSheet(); toast('Marked done. Waiting for quality check.'); go(APP.view); })
@@ -295,7 +353,7 @@ VIEWS.new = function () {
   h += '<div class="grid"><div><div style="font-size:14px;font-weight:600;margin-bottom:6px">Priority</div><div class="seg" id="npr">' + ['High', 'Medium', 'Low'].map(function (p) { return '<button type="button" class="' + (p === 'Medium' ? 'on' : '') + '" onclick="setPrio(this,\'' + p + '\')">' + p + '</button>'; }).join('') + '</div></div>' +
     '<label>Target date<input type="date" id="ndt" min="' + addDays(APP.today, 1) + '"></label></div>';
   h += '<label id="hrw" hidden>Why High? (customer order, metal or money at risk, production stopped, legal date)<input id="nh"></label>';
-  h += '<label>Voice note, photo or video for the owner (optional, up to ' + APP.maxMB + ' MB each)<input type="file" id="nf" accept="audio/*,image/*,video/*,application/pdf" multiple></label>';
+  h += mediaBox('nm', 'Voice note, photo or video for the owner (optional, up to ' + APP.maxMB + ' MB each)');
   h += '<label>Or a link (optional)<input id="nl" placeholder="Drive link for a long video"></label>';
   h += '<div id="ndrop"></div><div id="ne"></div><div class="row"><button class="btn" id="ns">Save and send</button></div></form>';
   h += '<aside class="card" style="flex:1 1 260px;min-width:0" id="nload"><h2>Owner’s load</h2><p class="empty">Choose an owner.</p></aside></div>';
@@ -315,7 +373,7 @@ function loadOwner() {
 }
 function submitTask() {
   var b = $('ns'); busy(b, true); $('ne').innerHTML = '';
-  uploadFiles($('nf'), 'brief/' + APP.today).then(function (files) {
+  stopRec(); uploadFiles(MEDIA.nm, 'brief/' + APP.today).then(function (files) {
     return call('api_create_task', { f: {
       type: NT.type, givenBy: $('ng') ? $('ng').value : '', owner: $('no').value, related: $('nr').value, task: $('nt').value.trim(),
       doneMeans: $('nd').value.trim(), proofType: NT.proof, priority: NT.priority, highReason: $('nh').value.trim(), date: $('ndt').value,
