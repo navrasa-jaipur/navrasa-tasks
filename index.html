@@ -260,7 +260,7 @@ function tabs() {
   else if (a === 'PC') list.push(['checks', 'Checks'], ['board', 'Board'], ['setup', 'Checklists']);
   else if (a === 'HOD' || APP.isTeamLead) list.push(['new', 'Team task'], ['team', 'My team'], ['checks', 'Checks'], ['board', 'Scores'], ['setup', 'Checklists']);
   else list.push(['board', 'My score']);
-  if (canPeople()) list.push(['people', 'People']);
+  if (canPeople()) list.push(['roles', 'Roles'], ['people', 'People']);
   return list;
 }
 function go(v) {
@@ -325,7 +325,6 @@ function openTask(id) {
     if (t.proof && t.proof.length) h += '<div class="card links"><b>Proof</b>' + links(t.proof, sg) + '</div>';
     if (t.proposal_status === 'Pending') h += '<div class="card"><b>New date asked: ' + e(fmtDate(t.proposed_date)) + '</b><span class="muted">Waiting for the EA.</span></div>';
     if (mine && open) {
-      if (t.status === 'Sent') h += '<div class="card"><div class="row"><button class="btn" onclick="act(' + id + ',\'accept\',{},this)">Accept</button></div><div class="row"><input type="date" id="pd" style="max-width:180px"><button class="btn sec" onclick="act(' + id + ',\'propose\',{date:$(\'pd\').value},this)">Accept and propose this date</button></div><span class="muted">You can propose one new date, free, only before accepting.</span></div>';
       h += '<div class="card"><h2>Mark done</h2>' + mediaBox('dm', 'Proof: photo, voice or file') + '<label>Or a proof link<input id="dl" placeholder="https://"></label><button class="btn" id="db">Mark done with proof</button></div>';
       h += '<details class="card"><summary style="cursor:pointer;font-weight:600">Blocked by someone, or need more time?</summary>' +
         '<label>Blocked by<select id="bb">' + APP.users.map(function (u) { return '<option>' + e(u.name) + '</option>'; }).join('') + '</select></label><label>What are you waiting for?<input id="bn"></label>' +
@@ -519,6 +518,27 @@ function editCl(id) {
       months: $('cm').value.trim(), due_time: $('cti').value, proof_type: $('cp').value.trim(), legal: $('cl').checked, active: $('ca').checked, department: r.department || '' } })
       .then(function () { closeSheet(); toast('Saved'); go('setup'); }).catch(function (m) { busy(b, false); errBox('ce', m); });
   };
+}
+
+// ---------- roles: who does which job (and gets its checklist) ----------
+VIEWS.roles = function () {
+  return call('api_roles').then(function (rows) {
+    APP.roles = rows;
+    var h = '<div><h1>Roles</h1><span class="muted">Who does each job. The person named here gets that role\'s checklist in the app and in Google Calendar. When someone leaves, replace the name and press Save. Several people: separate names with commas. Nobody: leave it empty.</span></div>';
+    var dep = '';
+    h += '<div class="tbl"><table><thead><tr><th>Department</th><th>Role</th><th>Person(s)</th><th>Items</th><th></th></tr></thead><tbody>' + rows.map(function (r, i) {
+      var d = r.department === dep ? '' : r.department; dep = r.department;
+      return '<tr><td>' + e(d) + '</td><td><b>' + e(r.role) + '</b></td><td><input id="ro' + i + '" value="' + e(r.people) + '" style="min-width:200px"></td><td>' + r.items + '</td>' +
+        '<td><button class="btn sec small" onclick="saveRole(' + i + ',this)">Save</button></td></tr>';
+    }).join('') + '</tbody></table></div>';
+    $('view').innerHTML = h;
+  });
+};
+function saveRole(i, b) {
+  busy(b, true);
+  call('api_assign_role', { p_role: APP.roles[i].role, p_names: $('ro' + i).value })
+    .then(function () { busy(b, false); toast('Saved. Calendar updates within 15 minutes.'); })
+    .catch(function (m) { busy(b, false); toast(String(m)); });
 }
 
 // ---------- people ----------
