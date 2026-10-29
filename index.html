@@ -281,7 +281,7 @@ VIEWS.day = function () {
     var h = '<div><h1>' + e(APP.me.name) + '’s day</h1><span class="muted">' + e(fmtDate(APP.today)) + (APP.working ? '' : ' · holiday or weekly off') + '</span></div>';
     h += '<section class="score"><div class="row" style="justify-content:space-between"><span>My score this week</span><span>Last week ' + pct(d.last) + '</span></div>' +
       '<div class="row"><b>' + pct(d.score) + '</b>' + (diff !== null ? '<span class="chip" style="background:#7A2C3E;color:#fff">' + (diff >= 0 ? diff + ' points better' : (-diff) + ' points worse') + '</span>' : '') + '</div>' +
-      '<span style="font-size:13px">Share of my work not done on time, weighted by priority. 0% is a perfect week.</span></section>';
+      '<span style="font-size:13px">Minus = my work not done on time, weighted by priority. Bring it to 0.</span></section>';
     h += '<section class="list"><h2>Due now</h2>' + (due.length ? due.map(function (t) { return taskCard(t); }).join('') : '<p class="empty">Nothing due. Good.</p>') + '</section>';
     APP.checks = {}; d.checks.forEach(function (c) { APP.checks[c.id] = c; });
     h += '<section class="card"><h2>My checklist</h2>' + (d.checks.length ? d.checks.map(checkRow).join('') : '<p class="empty">No checklist items today.</p>') + '</section>';
