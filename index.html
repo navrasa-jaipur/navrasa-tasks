@@ -314,7 +314,7 @@ function sheet(html) { $('sheet').innerHTML = '<div class="sheet" onclick="if(ev
 function closeSheet() { stopRec(); $('sheet').innerHTML = ''; }
 function openTask(id) {
   var t = APP.tasks[id]; if (!t) return;
-  signLinks([t.attachments, t.proof]).then(function (sg) {
+  signLinks([t.attachments, t.proof].concat((t.updates || []).map(function (u) { return u.files; }))).then(function (sg) {
     var mine = t.owner === APP.me.name, open = ['Sent', 'Accepted', 'Rework'].indexOf(t.status) > -1;
     var h = '<div class="chips">' + prioChip(t.priority) + stageChip(t) + '<span class="chip">T' + t.id + '</span></div><h1 style="font-size:26px">' + e(t.task) + '</h1>';
     h += '<div class="card"><span class="chip c-gold" style="align-self:flex-start">Done means</span><span>' + e(t.done_means) + '</span><span class="muted">Proof needed: ' + e(t.proof_type) + '</span></div>';
@@ -323,9 +323,11 @@ function openTask(id) {
       '<div><span class="muted">First date</span><br><b>' + e(fmtDate(t.target_date)) + '</b></div><div><span class="muted">Current due</span><br><b>' + e(fmtDate(t.current_due)) + ', 7 PM</b></div></div>';
     if (t.rework_note) h += '<div class="err">Rework: ' + e(t.rework_note) + '</div>';
     if (t.proof && t.proof.length) h += '<div class="card links"><b>Proof</b>' + links(t.proof, sg) + '</div>';
+    if (t.updates && t.updates.length) h += '<div class="card"><b>Updates</b>' + t.updates.map(function (u) { return '<div style="border-top:1px solid var(--line);padding-top:6px"><span class="muted" style="font-size:12px">' + e(u.by) + ' · ' + e(fmtDate(String(u.at).slice(0, 16))) + '</span>' + (u.note ? '<div>' + e(u.note) + '</div>' : '') + '<div class="links">' + links(u.files, sg) + '</div></div>'; }).join('') + '</div>';
     if (t.proposal_status === 'Pending') h += '<div class="card"><b>New date asked: ' + e(fmtDate(t.proposed_date)) + '</b><span class="muted">Waiting for the EA.</span></div>';
     if (mine && open) {
-      h += '<div class="card"><h2>Mark done</h2>' + mediaBox('dm', 'Proof: photo, voice or file') + '<label>Or a proof link<input id="dl" placeholder="https://"></label><button class="btn" id="db">Mark done with proof</button></div>';
+      h += '<div class="card"><h2>Mark done</h2>' + mediaBox('dm', 'Proof: photo, voice or file') + '<label>Or a proof link<input id="dl" placeholder="https://"></label>' + noteBox('dn', 'Comment (optional)') + '<button class="btn" id="db">Mark done with proof</button></div>';
+      h += '<details class="card"><summary style="cursor:pointer;font-weight:600">Add an update (still working)</summary>' + noteBox('un', 'What is the status?') + mediaBox('um', 'Voice note, photo or file (optional)') + '<button class="btn sec" id="ub">Save update</button></details>';
       h += '<details class="card"><summary style="cursor:pointer;font-weight:600">Blocked by someone, or need more time?</summary>' +
         '<label>Blocked by<select id="bb">' + APP.users.map(function (u) { return '<option>' + e(u.name) + '</option>'; }).join('') + '</select></label><label>What are you waiting for?<input id="bn"></label>' +
         '<button class="btn sec" onclick="act(' + id + ',\'blocked\',{by:$(\'bb\').value,note:$(\'bn\').value},this)">Send to coordinator</button>' +
@@ -337,11 +339,34 @@ function openTask(id) {
       var b = this; busy(b, true);
       stopRec(); uploadFiles(MEDIA.dm, 'proof/T' + id).then(function (f) {
         var proof = f.concat($('dl').value.trim() ? [$('dl').value.trim()] : []);
-        return call('api_task_action', { p_id: id, p_action: 'done', p_data: { proof: proof } });
+        return call('api_task_action', { p_id: id, p_action: 'done', p_data: { proof: proof, note: $('dn').value.trim() } });
       }).then(function () { closeSheet(); toast('Marked done. Waiting for quality check.'); go(APP.view); })
         .catch(function (m) { busy(b, false); errBox('pe', m); });
     };
+    if ($('ub')) $('ub').onclick = function () {
+      var b = this; busy(b, true);
+      stopRec(); uploadFiles(MEDIA.um, 'update/T' + id).then(function (f) {
+        return call('api_task_action', { p_id: id, p_action: 'comment', p_data: { note: $('un').value.trim(), files: f } });
+      }).then(function () { closeSheet(); toast('Update saved'); go(APP.view); })
+        .catch(function (m) { busy(b, false); errBox('pe', m); });
+    };
   });
+}
+// a text box you can type into or speak into (phone speech recognition)
+function noteBox(id, label) {
+  return '<label>' + e(label) + '<div class="row" style="flex-wrap:nowrap;gap:8px"><textarea id="' + id + '" rows="2" style="flex:1;min-width:0"></textarea><button type="button" class="btn sec small" id="' + id + '-mic" onclick="dictate(\'' + id + '\')">Speak</button></div></label>';
+}
+var DICT = null;
+function dictate(id) {
+  var R = window.SpeechRecognition || window.webkitSpeechRecognition, b = $(id + '-mic');
+  if (DICT) { DICT.stop(); return; }
+  if (!R) { toast('This browser cannot listen. Use Record voice instead.'); return; }
+  var r = new R(), start = $(id).value ? $(id).value + ' ' : ''; DICT = r;
+  r.lang = 'en-IN'; r.interimResults = true; r.continuous = true;
+  r.onresult = function (ev) { var t = ''; for (var i = 0; i < ev.results.length; i++) t += ev.results[i][0].transcript; $(id).value = start + t; };
+  r.onerror = function (ev) { if (ev.error === 'not-allowed') toast('Allow the microphone to speak.'); };
+  r.onend = function () { DICT = null; b.textContent = 'Speak'; b.classList.remove('rec'); };
+  r.start(); b.textContent = 'Stop'; b.classList.add('rec');
 }
 function act(id, action, data, btn) {
   busy(btn, true);
