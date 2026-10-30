@@ -362,6 +362,7 @@ VIEWS.new = function () {
   NT = { priority: 'Medium', proof: 'Link', type: admin ? 'Company' : 'Team', drop: '' };
   var h = '<div><h1>' + (admin ? 'New task' : 'New team task') + '</h1><span class="muted">' + (admin ? 'It can’t be sent until every field is filled.' : 'Team tasks stay between you and your team. They don’t count in the company score.') + '</span></div>';
   h += '<div class="row" style="align-items:flex-start;gap:18px"><form class="card" style="flex:999 1 520px;min-width:0;gap:14px" onsubmit="return false">';
+  h += '<div class="card" style="gap:8px;background:var(--goldbg)"><div class="row" style="justify-content:space-between;align-items:center"><b>Speak the task</b><button type="button" class="btn small" id="spk" onclick="speakTask()">Speak</button></div><span class="muted" style="font-size:13px">Say it in one line: <i>“Rahul, finish the Laxmi ji pair by Friday, high priority”</i>. The form fills itself. Check it, then press Save and send.</span><div id="spt" class="muted" style="font-size:13px"></div></div>';
   if (admin) h += '<div class="grid"><label>Given by<select id="ng">' + APP.users.filter(function (u) { return ['Admin', 'HOD', 'EA'].indexOf(u.access) > -1; }).map(function (u) { return '<option' + (u.name === 'Ashwyn Sir' ? ' selected' : '') + '>' + e(u.name) + '</option>'; }).join('') + '</select></label>' +
     '<label>Kind<select id="nk" onchange="NT.type=this.value"><option>Company</option><option>Team</option></select></label></div>';
   h += '<div class="grid"><label>Owner (one person)<select id="no" onchange="loadOwner()"><option value="">Choose…</option>' + owners.map(function (u) { return '<option value="' + e(u.name) + '">' + e(u.name) + (u.role ? ' · ' + e(u.role) : '') + '</option>'; }).join('') + '</select></label>' +
@@ -380,6 +381,56 @@ VIEWS.new = function () {
   $('ns').onclick = submitTask;
   return Promise.resolve();
 };
+// ---------- speak a task: the phone's own speech recognition (free), then fill the form ----------
+var SPK = null;
+function speakTask() {
+  var R = window.SpeechRecognition || window.webkitSpeechRecognition, b = $('spk');
+  if (SPK) { SPK.stop(); return; }
+  if (!R) { toast('This browser cannot listen. Use Chrome on Android or Safari on iPhone.'); return; }
+  var r = new R(), text = ''; SPK = r;
+  r.lang = 'en-IN'; r.interimResults = true; r.continuous = true;
+  r.onresult = function (ev) { text = ''; for (var i = 0; i < ev.results.length; i++) text += ev.results[i][0].transcript + ' '; $('spt').textContent = text; };
+  r.onerror = function (ev) { toast(ev.error === 'not-allowed' ? 'Allow the microphone to speak a task.' : 'Could not hear clearly. Try again.'); };
+  r.onend = function () { SPK = null; b.textContent = 'Speak'; b.classList.remove('rec'); if (text.trim()) fillFromSpeech(text.trim()); };
+  r.start(); b.textContent = 'Stop'; b.classList.add('rec'); $('spt').textContent = 'Listening…';
+}
+function fillFromSpeech(t) {
+  var low = ' ' + t.toLowerCase().replace(/[.,!?]/g, ' ') + ' ', rest = t;
+  // owner: longest name (or first name) heard
+  var opts = [].slice.call($('no').options).map(function (o) { return o.value; }).filter(Boolean), best = null, bestWord = '';
+  opts.forEach(function (n) {
+    [n.toLowerCase(), n.toLowerCase().split(' ')[0]].forEach(function (w) {
+      if (w.length > 2 && low.indexOf(' ' + w + ' ') > -1 && w.length > bestWord.length) { best = n; bestWord = w; }
+    });
+  });
+  if (best) { $('no').value = best; loadOwner(); best.toLowerCase().split(' ').forEach(function (w) { if (w.length > 1) rest = rest.replace(new RegExp('\\b' + w.replace(/[^a-z]/g, '') + '\\b', 'i'), ''); }); }
+  // priority
+  var pr = /\b(high|urgent|important|zaroori|jaruri)\b/.test(low) ? 'High' : /\blow\b/.test(low) ? 'Low' : 'Medium';
+  setPrio([].filter.call($('npr').children, function (x) { return x.textContent === pr; })[0], pr);
+  rest = rest.replace(/\b(high|medium|low|urgent|important)\b( priority)?/ig, '');
+  // date
+  var base = new Date(APP.today + 'T00:00:00Z'), d = null, m;
+  var days = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6, somvar: 1, mangalvar: 2, budhvar: 3, guruvar: 4, shukravar: 5, shanivar: 6 };
+  var mons = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+  if (/\b(day after tomorrow|parso|parson)\b/.test(low)) d = 2;
+  else if (/\b(tomorrow|kal)\b/.test(low)) d = 1;
+  else if ((m = low.match(/\b(?:in|within)?\s*(\d{1,2}|two|three|four|five|seven|ten)\s*(days|din)\b/))) d = ({ two: 2, three: 3, four: 4, five: 5, seven: 7, ten: 10 })[m[1]] || +m[1];
+  else if (/\b(next week|agle hafte)\b/.test(low)) d = 7;
+  if (d !== null) d = addDays(APP.today, d);
+  if (!d) Object.keys(days).forEach(function (k) { if (!d && low.indexOf(' ' + k + ' ') > -1) { var diff = (days[k] - base.getUTCDay() + 7) % 7 || 7; d = addDays(APP.today, diff); } });
+  if (!d && (m = low.match(/\b(\d{1,2})(?:st|nd|rd|th)?\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*/))) {
+    var y = base.getUTCFullYear(), dt = new Date(Date.UTC(y, mons[m[2]], +m[1]));
+    if (dt <= base) dt = new Date(Date.UTC(y + 1, mons[m[2]], +m[1]));
+    d = dt.toISOString().slice(0, 10);
+  }
+  if (d) $('ndt').value = d;
+  rest = rest.replace(/\b(by|before|on|till|until)?\s*(day after tomorrow|tomorrow|today|next week|parso|kal|(this |next )?(sunday|monday|tuesday|wednesday|thursday|friday|saturday)|\d{1,2}(st|nd|rd|th)?\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*|in \d+ days)\b/ig, '');
+  rest = rest.replace(/^[\s,]*(ji|sir)\b/i, '').replace(/\b(priority)\b/ig, '').replace(/\s{2,}/g, ' ').replace(/^[\s,:\-]+|[\s,:\-]+$/g, '');
+  rest = rest.charAt(0).toUpperCase() + rest.slice(1);
+  $('nt').value = rest;
+  if (!$('nd').value) $('nd').value = rest + ' — completed, as spoken by ' + (APP.me.name || '') + '.';
+  $('spt').innerHTML = 'Heard: “' + e(t) + '”' + (best ? '' : '<br><b style="color:var(--red)">Name not found. Choose the owner.</b>') + (d ? '' : '<br><b style="color:var(--red)">Date not found. Choose the date.</b>');
+}
 function setProof(b, p) { NT.proof = p; [].forEach.call($('np').children, function (x) { x.classList.toggle('on', x === b); }); }
 function setPrio(b, p) { NT.priority = p; [].forEach.call($('npr').children, function (x) { x.classList.toggle('on', x === b); }); $('hrw').hidden = p !== 'High'; }
 function loadOwner() {
