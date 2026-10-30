@@ -111,28 +111,42 @@ function busy(btn, on) { if (!btn) return; btn.disabled = on; if (on) { btn.data
 function errBox(id, m) { $(id).innerHTML = '<div class="err">' + e(m) + '</div>'; }
 
 // files go to the private "nas-files" bucket and are stored as "sb:<path>"
+var FN = 'https://lqiqijquuuvkzzbcplxj.supabase.co/functions/v1/nas-google';
+// files go to Google Drive (folder "Navrasa Tasks Files") and are stored as "gd:<id>"; old storage is the fallback
 function uploadFiles(list, folder) {
   var files = Array.isArray(list) ? list : (list && list.files ? [].slice.call(list.files) : []);
-  return Promise.all(files.map(function (f) {
-    if (f.size > APP.maxMB * 1048576) return Promise.reject(f.name + ' is bigger than ' + APP.maxMB + ' MB. Upload it to Drive and paste the link.');
-    var path = folder + '/' + Date.now() + '-' + f.name.replace(/[^\w.\-]+/g, '_');
-    return sb.storage.from('nas-files').upload(path, f, { contentType: f.type || 'application/octet-stream' }).then(function (r) {
-      if (r.error) throw 'Upload failed for ' + f.name + ': ' + r.error.message;
-      return 'sb:' + path;
-    });
-  }));
+  return sb.auth.getSession().then(function (ss) {
+    var jwt = ss.data.session ? ss.data.session.access_token : '';
+    return Promise.all(files.map(function (f) {
+      if (f.size > APP.maxMB * 1048576) return Promise.reject(f.name + ' is bigger than ' + APP.maxMB + ' MB. Upload it to Drive and paste the link.');
+      return fetch(FN + '?op=upload', { method: 'POST', headers: { Authorization: 'Bearer ' + jwt, 'Content-Type': f.type || 'application/octet-stream', 'x-name': encodeURIComponent(f.name), 'x-folder': encodeURIComponent(folder) }, body: f })
+        .then(function (r) { return r.json(); })
+        .then(function (j) { if (j.ref) return j.ref; throw j.error || 'Drive upload failed'; })
+        .catch(function () {
+          var path = folder + '/' + Date.now() + '-' + f.name.replace(/[^\w.\-]+/g, '_');
+          return sb.storage.from('nas-files').upload(path, f, { contentType: f.type || 'application/octet-stream' }).then(function (r) {
+            if (r.error) throw 'Upload failed for ' + f.name + ': ' + r.error.message;
+            return 'sb:' + path;
+          });
+        });
+    }));
+  });
 }
 function signLinks(arrs) {
-  var paths = [];
-  arrs.forEach(function (a) { (a || []).forEach(function (x) { if (/^sb:/.test(x)) paths.push(x.slice(3)); }); });
-  if (!paths.length) return Promise.resolve({});
-  return sb.storage.from('nas-files').createSignedUrls(paths, 3600).then(function (r) {
-    var m = {}; (r.data || []).forEach(function (x) { if (x.signedUrl) m[x.path] = x.signedUrl; }); return m;
-  });
+  var paths = [], gids = [];
+  arrs.forEach(function (a) { (a || []).forEach(function (x) { if (/^sb:/.test(x)) paths.push(x.slice(3)); if (/^gd:/.test(x)) gids.push(x.slice(3)); }); });
+  var m = {};
+  var p1 = paths.length ? sb.storage.from('nas-files').createSignedUrls(paths, 3600).then(function (r) { (r.data || []).forEach(function (x) { if (x.signedUrl) m[x.path] = x.signedUrl; }); }) : Promise.resolve();
+  var p2 = gids.length ? sb.auth.getSession().then(function (ss) {
+    return fetch(FN + '?op=sign', { method: 'POST', headers: { Authorization: 'Bearer ' + (ss.data.session ? ss.data.session.access_token : ''), 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: gids }) })
+      .then(function (r) { return r.json(); }).then(function (j) { Object.keys(j || {}).forEach(function (k) { m['gd:' + k] = j[k]; }); });
+  }).catch(function () {}) : Promise.resolve();
+  return Promise.all([p1, p2]).then(function () { return m; });
 }
 function links(arr, signed) {
   return (arr || []).map(function (u) {
     if (/^sb:/.test(u)) { var p = u.slice(3), url = (signed || {})[p]; var name = p.split('/').pop().replace(/^\d+-/, ''); return url ? '<a href="' + e(url) + '" target="_blank" rel="noopener">' + e(name) + '</a>' : '<span>' + e(name) + '</span>'; }
+    if (/^gd:/.test(u)) { var gu = (signed || {})[u]; return gu ? '<a href="' + e(gu) + '" target="_blank" rel="noopener">Open file</a>' : '<span>File (link loading failed)</span>'; }
     return /^https?:/.test(u) ? '<a href="' + e(u) + '" target="_blank" rel="noopener">' + e(u.length > 60 ? u.slice(0, 57) + '…' : u) + '</a>' : '<span>' + e(u) + '</span>';
   }).join('');
 }
