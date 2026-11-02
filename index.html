@@ -116,12 +116,131 @@ a.btn{display:inline-flex;align-items:center;text-decoration:none}
 @media(max-width:560px){.tiles{grid-template-columns:repeat(3,1fr);gap:8px}.tile{padding:10px;gap:4px}.tile b{font-size:26px}.tile b small{display:block;font-size:12px;margin-top:4px}.tile .tl{font-size:10px}.tile .muted,.tile.dark span:not(.tl){font-size:11px}.ev{grid-template-columns:62px 14px 1fr}.ev::before{left:74px}.now::before{width:70px}}
 .where{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
 .where>div{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+
+/* ---------- app shell: sidebar (iPad/desktop), bottom bar (phone) ---------- */
+#shell{display:flex;min-height:100vh}
+#col{flex:1;min-width:0;display:flex;flex-direction:column}
+#side{width:240px;flex:none;background:#2B0A12;color:#EADBD0;display:flex;flex-direction:column;gap:6px;padding:14px 10px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sbrand{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;font:400 24px 'Agatho',Georgia,serif;padding:4px 8px 10px}
+.logo{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:9px;background:var(--maroon);color:#E9C9A0;font:400 20px 'Agatho',Georgia,serif;border:1px solid #7a3446}
+.sbtn-new{font:inherit;font-weight:700;background:#E9C9A0;color:#2B0A12;border:none;border-radius:10px;min-height:42px;cursor:pointer;margin:0 4px 6px}
+#snav{display:flex;flex-direction:column;gap:2px;flex:1}
+#snav .sh{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#B99A8C;padding:12px 10px 4px}
+#snav button,#snav a{font:inherit;font-size:14.5px;text-align:left;border:none;background:none;color:#EADBD0;padding:9px 10px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:10px;text-decoration:none}
+#snav button:hover,#snav a:hover{background:#3d1520}
+#snav button.on{background:#4a1a27;color:#fff;font-weight:700}
+#snav .ic{width:18px;text-align:center;opacity:.85}
+#snav .cnt{margin-left:auto;font-size:12px;background:#5A1324;border-radius:99px;padding:0 7px}
+.sfoot{display:flex;align-items:center;gap:10px;border-top:1px solid #4a1a27;padding:12px 6px 2px;font-size:13px}
+.sfoot b{display:block;color:#fff;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sfoot span{color:#B99A8C;font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sfoot .av{display:inline-grid;color:#fff;font-size:11.5px}
+.mob{display:none}
+@media(max-width:700px){.mob{display:inline}}
+.sout{font:inherit;font-size:12px;background:none;border:1px solid #6b2a3a;color:#EADBD0;border-radius:7px;padding:5px 8px;cursor:pointer}
+header .bar{max-width:none;display:flex;align-items:center;gap:12px;padding:10px 20px;flex-wrap:nowrap}
+.ptitle{font:400 24px/1.15 'Agatho',Georgia,serif;color:var(--maroon);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vtabs{display:flex;gap:2px;margin-top:4px;overflow-x:auto}
+.vtabs button{font:inherit;font-size:13.5px;border:none;background:none;padding:5px 10px;border-radius:7px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.vtabs button.on{color:var(--maroon);font-weight:700;background:#F1E1E4}
+#q{width:220px;flex:none;padding:8px 12px;border-radius:99px}
+.mbrand{display:none}
+main{max-width:1180px;width:100%}
+.av{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;font-size:11.5px;font-weight:700;color:#fff;flex:none}
+.av.sm{width:22px;height:22px;font-size:10px}
+#bnav{position:fixed;left:0;right:0;bottom:0;z-index:15;background:var(--card);border-top:1px solid var(--line);display:none;padding:4px max(6px,env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left))}
+#bnav button{flex:1;font:inherit;font-size:11px;border:none;background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;cursor:pointer;min-height:50px}
+#bnav button .ic{font-size:19px;line-height:1}
+#bnav button.on{color:var(--maroon);font-weight:700}
+@media(max-width:899px){
+  #side{display:none!important}
+  #bnav:not([hidden]){display:flex}
+  .mbrand{display:block}
+  header .bar{padding:8px 14px}
+  #q{display:none}
+  main{padding-bottom:calc(90px + env(safe-area-inset-bottom))}
+  nav#nav{display:none}
+}
+/* side drawer for task details on wide screens (Any.do style) */
+@media(min-width:900px){.sheet{justify-content:flex-end;align-items:stretch}.panel{border-radius:0;max-width:520px;max-height:none;height:100vh;box-shadow:-12px 0 30px rgba(43,10,18,.18)}}
+/* scope pills */
+.scope{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+/* list view (Asana / Any.do) */
+.tl-group{display:flex;flex-direction:column}
+.tl-gh{display:flex;align-items:center;gap:8px;font:400 19px 'Agatho',Georgia,serif;padding:12px 4px 6px;cursor:pointer;border:none;background:none;color:var(--ink);text-align:left}
+.tl-gh .n{font:600 12px Montserrat,sans-serif;color:var(--muted);background:var(--chip);border-radius:99px;padding:1px 8px}
+.tl-gh.red{color:var(--red)}
+.tl-head,.tl-row{display:grid;grid-template-columns:28px minmax(0,1fr) 150px 110px 90px;gap:10px;align-items:center}
+.tl-head{font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:6px 12px;border-bottom:1px solid var(--line)}
+.tl-box{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.tl-row{padding:10px 12px;border-top:1px solid #EFE7DC;cursor:pointer;background:none;border-left:none;border-right:none;border-bottom:none;font:inherit;color:inherit;text-align:left;width:100%}
+.tl-row:first-child{border-top:none}
+.tl-row:hover{background:#FBF6EF}
+.tl-row .ttl{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tl-row .sub{font-size:12.5px;color:var(--muted);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl-row .who2{display:flex;align-items:center;gap:6px;font-size:13px;min-width:0}
+.tl-row .who2 span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl-row .due{font-size:13px;font-variant-numeric:tabular-nums}
+.tl-row .due.late{color:var(--red);font-weight:700}
+.circ{width:20px;height:20px;border-radius:50%;border:2px solid #BFAE97;display:inline-grid;place-items:center;font-size:12px;color:#fff}
+.circ.done{background:var(--green);border-color:var(--green)}
+.circ.qc{border-color:var(--gold);background:var(--goldbg);color:var(--gold)}
+.circ.red{border-color:var(--red)}
+.pdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.p-High{background:var(--red)}.p-Medium{background:#D59B1F}.p-Low{background:var(--green)}
+@media(max-width:700px){.tl-head{display:none}.tl-row{grid-template-columns:24px minmax(0,1fr) auto}.tl-row .who2,.tl-row .pr{display:none}}
+.quick{display:flex;gap:8px;align-items:center;background:var(--card);border:1px dashed #CFC3B3;border-radius:12px;padding:6px 6px 6px 14px}
+.quick input{border:none;padding:8px 0;background:transparent}
+.quick input:focus{outline:none}
+/* board view (Trello) */
+.kb{display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;scroll-snap-type:x mandatory;align-items:flex-start}
+.kcol{flex:0 0 280px;scroll-snap-align:start;background:#EFE6DA;border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 220px);overflow-y:auto}
+.kcol h3{margin:0;font:700 14px Montserrat,sans-serif;display:flex;justify-content:space-between;align-items:center;padding:2px 4px}
+.kcol h3 .n{font-weight:600;color:var(--muted);font-size:12px}
+.kcard{background:var(--card);border-radius:10px;padding:10px;box-shadow:0 1px 0 rgba(43,10,18,.12);display:flex;flex-direction:column;gap:8px;cursor:pointer;border:none;font:inherit;color:inherit;text-align:left;width:100%}
+.kcard:hover{box-shadow:0 0 0 2px #C9B48F}
+.kcard .lbl{height:6px;width:44px;border-radius:99px}
+.kcard .ft{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:12px;color:var(--muted)}
+.kcard .badge{border-radius:5px;padding:1px 6px;font-weight:600;font-size:11.5px;background:var(--chip);color:#5C4A3A}
+.kcard .badge.late{background:var(--redbg);color:var(--red)}
+.kcard .badge.today{background:var(--goldbg);color:var(--gold)}
+.kcol.c-late{background:#F4DEDB}.kcol.c-qc{background:#EFE3CF}.kcol.c-done{background:#E1EDDF}
+@media(max-width:700px){.kcol{flex-basis:84vw;max-height:none}}
+/* calendar view */
+.calh{display:flex;align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap}
+.calg{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));background:var(--line);gap:1px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.calg .dh{background:var(--goldbg);font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#5C4A3A;padding:6px 8px}
+.calg .dc{background:var(--card);min-height:104px;padding:6px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.calg .dc.out{background:#F8F3EC;color:#B3A79B}
+.calg .dc .dn{font-size:12.5px;font-weight:600}
+.calg .dc.td .dn{background:var(--maroon);color:#fff;border-radius:99px;width:24px;height:24px;display:grid;place-items:center}
+.calg .ev2{font-size:11.5px;border-radius:4px;padding:2px 5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:none;font-family:inherit;text-align:left;cursor:pointer}
+.ev2.High{background:#C0392B}.ev2.Medium{background:#C98A12}.ev2.Low{background:#3E8A4F}.ev2.done{opacity:.45;text-decoration:line-through}
+.calg .more{font-size:11px;color:var(--muted)}
+.agenda{display:none}
+@media(max-width:700px){.calg{display:none}.agenda{display:flex;flex-direction:column;gap:12px}}
 .btn.rec{background:var(--red);color:#fff;border-color:var(--red)}
 </style>
 </head>
 <body>
-<header id="hdr" hidden><div class="bar"><a class="brand" href="hub.html" style="text-decoration:none;color:inherit" title="Open Navrasa Hub">Navrasa Tasks</a><nav id="nav"></nav><span class="who"><span id="who"></span><button onclick="signOut()">Sign out</button></span></div></header>
-<main id="view"><p class="muted">Loading…</p></main>
+<div id="shell" class="noshell">
+<aside id="side" hidden>
+  <a class="sbrand" href="hub.html" title="Open Navrasa Hub"><span class="logo">N</span><span>Navrasa</span></a>
+  <button class="sbtn-new" id="sNew" hidden onclick="go('new')">+ New task</button>
+  <nav id="snav"></nav>
+  <div class="sfoot"><span class="av" id="sAv"></span><div style="min-width:0;flex:1"><b id="sName"></b><span id="sRole"></span></div><button class="sout" onclick="signOut()" title="Sign out">Sign out</button></div>
+</aside>
+<div id="col">
+  <header id="hdr" hidden><div class="bar">
+    <span class="mbrand"><span class="logo">N</span></span>
+    <div style="min-width:0;flex:1"><div class="ptitle" id="ptitle"></div><div class="vtabs" id="vtabs"></div></div>
+    <input id="q" type="search" placeholder="Search tasks" aria-label="Search tasks" hidden oninput="APP.q=this.value;redraw()">
+    <button class="btn small" id="hNew" hidden onclick="go('new')">+ New</button>
+  </div></header>
+  <main id="view"><p class="muted">Loading…</p></main>
+</div>
+</div>
+<nav id="bnav" hidden></nav>
 <div id="sheet"></div>
 <script>
 var SB_URL = 'https://lqiqijquuuvkzzbcplxj.supabase.co';
@@ -293,7 +412,7 @@ function stopRec() { if (REC) REC.stop(); }
 
 // ---------- sign-in ----------
 function showLogin(msg) {
-  $('hdr').hidden = true;
+  $('hdr').hidden = true; $('side').hidden = true; $('bnav').hidden = true;
   $('view').innerHTML = '<div class="login"><h1>Navrasa Tasks</h1>' + (msg ? '<div class="err">' + e(msg) + '</div>' : '') +
     '<div class="card"><h2>Office staff</h2><span class="muted">Use your @thenavrasa.com Google account.</span><button class="btn" onclick="googleIn()">Sign in with Google</button></div>' +
     '<div class="or">or</div><form class="card" onsubmit="return pinIn(event)"><h2>Floor and support staff</h2><label>Staff code<input id="lc" autocomplete="username" autocapitalize="none"></label>' +
@@ -325,7 +444,7 @@ function stageChip(t) {
   if (t.status === 'Closed') return '<span class="chip c-green">Closed · ' + e(pct(+t.miss_pct)) + '</span>';
   if (t.status === 'Dropped') return '<span class="chip">Dropped</span>';
   if (t.stage === 'Rev 1' || t.stage === 'Rev 2') return '<span class="chip c-red">' + e(t.stage) + ' · due ' + e(fmtDate(t.current_due)) + '</span>';
-  return '<span class="chip c-green">Due ' + e(fmtDate(t.current_due)) + '</span>';
+  return '<span class="chip ' + (t.current_due < APP.today ? 'c-red">Overdue · was due ' : 'c-green">Due ') + e(fmtDate(t.current_due)) + '</span>';
 }
 function prioChip(p) { return '<span class="chip ' + (p === 'High' ? 'c-high' : '') + '">' + e(p) + '</span>'; }
 function taskCard(t, extra) {
@@ -336,23 +455,171 @@ function taskCard(t, extra) {
     '</div><span style="font-weight:600">' + e(t.task) + '</span><span class="muted">' + e(extra || ('From ' + t.given_by + ' · proof: ' + t.proof_type)) + '</span></button>';
 }
 
-// ---------- navigation ----------
+// ---------- navigation (sidebar on iPad/desktop, bottom bar on phone) ----------
 var VIEWS = {};
 function canPeople() { return APP.me.access === 'Admin' || APP.me.access === 'EA' || APP.me.department === 'HR'; }
-function tabs() {
-  var a = APP.me.access, list = [['day', 'My Day']];
-  if (a === 'Admin' || a === 'EA') list.push(['new', 'New task'], ['checks', 'Checks'], ['board', 'Monday board'], ['setup', 'Checklists']);
-  else if (a === 'PC') list.push(['checks', 'Checks'], ['board', 'Board'], ['setup', 'Checklists']);
-  else if (a === 'HOD' || APP.isTeamLead) list.push(['new', 'Team task'], ['team', 'My team'], ['checks', 'Checks'], ['board', 'Scores'], ['setup', 'Checklists']);
-  else list.push(['board', 'My score']);
-  if (canPeople()) list.push(['roles', 'Roles'], ['people', 'People']);
-  return list;
+function canCreate() { var a = APP.me.access; return a === 'Admin' || a === 'EA' || a === 'HOD' || APP.isTeamLead; }
+function isBig() { var a = APP.me.access; return a === 'Admin' || a === 'EA' || a === 'PC'; }
+var ICON = { day: '☀', tasks: '☑', kanban: '▦', cal: '▤', new: '+', checks: '✓', board: '◆', team: '◎', setup: '≡', roles: '⚑', people: '☺', hub: '⌂', more: '⋯' };
+var TITLE = { day: 'My Day', tasks: 'Tasks', kanban: 'Tasks', cal: 'Tasks', new: 'New task', checks: 'Checks', board: 'Monday board', team: 'My team', setup: 'Checklists', roles: 'Roles', people: 'People' };
+function navList() {
+  var a = APP.me.access, work = [['day', 'My Day'], ['tasks', 'Tasks'], ['kanban', 'Board'], ['cal', 'Calendar']], manage = [];
+  if (a === 'Admin' || a === 'EA') manage.push(['checks', 'Checks'], ['board', 'Monday board'], ['setup', 'Checklists']);
+  else if (a === 'PC') manage.push(['checks', 'Checks'], ['board', 'Board & scores'], ['setup', 'Checklists']);
+  else if (a === 'HOD' || APP.isTeamLead) manage.push(['team', 'My team'], ['checks', 'Checks'], ['board', 'Scores'], ['setup', 'Checklists']);
+  else manage.push(['board', 'My score']);
+  if (canPeople()) manage.push(['roles', 'Roles'], ['people', 'People']);
+  return { work: work, manage: manage };
 }
+function tabs() { var n = navList(); return n.work.concat(n.manage); }
 function go(v) {
   APP.view = v; APP.tasks = {};
-  $('nav').innerHTML = tabs().map(function (x) { return '<button class="' + (x[0] === v ? 'on' : '') + '" onclick="go(\'' + x[0] + '\')">' + x[1] + '</button>'; }).join('');
+  var n = navList(), taskish = ['tasks', 'kanban', 'cal'].indexOf(v) > -1;
+  var btn = function (x) { return '<button class="' + (x[0] === v || (x[0] === 'tasks' && v === 'tasks') ? 'on' : '') + '" onclick="go(\'' + x[0] + '\')"><span class="ic">' + ICON[x[0]] + '</span>' + x[1] + '</button>'; };
+  $('snav').innerHTML = '<span class="sh">My work</span>' + n.work.map(btn).join('') + '<span class="sh">Manage</span>' + n.manage.map(btn).join('') +
+    '<span class="sh">Navrasa</span><a href="hub.html"><span class="ic">' + ICON.hub + '</span>All systems (Hub)</a>';
+  var bn = [['day', 'My Day'], ['tasks', 'Tasks'], ['kanban', 'Board'], ['cal', 'Calendar']];
+  $('bnav').innerHTML = bn.map(function (x) { return '<button class="' + (x[0] === v ? 'on' : '') + '" onclick="go(\'' + x[0] + '\')"><span class="ic">' + ICON[x[0]] + '</span>' + x[1] + '</button>'; }).join('') +
+    '<button class="' + (bn.every(function (x) { return x[0] !== v; }) ? 'on' : '') + '" onclick="moreMenu()"><span class="ic">' + ICON.more + '</span>More</button>';
+  $('ptitle').textContent = TITLE[v] || '';
+  $('vtabs').innerHTML = taskish ? [['tasks', 'List'], ['kanban', 'Board'], ['cal', 'Calendar']].map(function (x) { return '<button class="' + (x[0] === v ? 'on' : '') + '" onclick="go(\'' + x[0] + '\')">' + x[1] + '</button>'; }).join('') : '';
+  $('q').hidden = !taskish;
   $('view').innerHTML = '<p class="muted">Loading…</p>';
+  closeSheet();
   VIEWS[v]().catch(function (m) { $('view').innerHTML = '<div class="err">' + e(m) + '</div>'; });
+  window.scrollTo(0, 0);
+}
+function moreMenu() {
+  var n = navList(), items = n.manage.concat(canCreate() ? [['new', 'New task']] : []);
+  sheet('<h2>More</h2><div class="list">' + items.map(function (x) { return '<button class="card task" style="flex-direction:row;align-items:center;gap:12px" onclick="go(\'' + x[0] + '\')"><span style="font-size:20px;width:24px;text-align:center">' + ICON[x[0]] + '</span><b>' + x[1] + '</b></button>'; }).join('') +
+    '<a class="card task" style="flex-direction:row;align-items:center;gap:12px;text-decoration:none" href="hub.html"><span style="font-size:20px;width:24px;text-align:center">' + ICON.hub + '</span><b>All Navrasa systems (Hub)</b></a>' +
+    '<button class="card task" style="flex-direction:row;align-items:center;gap:12px" onclick="signOut()"><span style="font-size:20px;width:24px;text-align:center">⇥</span><b>Sign out</b></button></div>');
+}
+function avatar(name, sm) {
+  var n = String(name || '?'), h = 0; for (var i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) | 0;
+  var cols = ['#7A2C3E', '#8A5A1E', '#2F6B3A', '#3D5A80', '#6B3FA0', '#9C4F2E', '#1F6F78', '#5A1324'];
+  var ini = n.replace(/\b(Sir|Ji)\b/g, '').trim().split(/\s+/).map(function (w) { return w.charAt(0); }).slice(0, 2).join('').toUpperCase();
+  return '<span class="av' + (sm ? ' sm' : '') + '" style="background:' + cols[Math.abs(h) % cols.length] + '" title="' + e(n) + '">' + e(ini) + '</span>';
+}
+
+// ---------- tasks: shared data for List, Board and Calendar ----------
+function scopes() {
+  var s = [['mine', 'Mine']];
+  if (canCreate()) s.push(['given', 'Given by me']);
+  if (APP.me.access === 'HOD' || APP.isTeamLead) s.push(['team', 'My team']);
+  if (isBig()) s.push(['all', 'Everyone']);
+  return s;
+}
+function loadTasks() {
+  APP.scope = APP.scope || (isBig() ? 'all' : 'mine');
+  return call('api_tasks', { p_scope: APP.scope }).then(function (rows) { APP.allTasks = rows || []; return APP.allTasks; });
+}
+function filtered() {
+  var q = (APP.q || '').toLowerCase().trim();
+  return (APP.allTasks || []).filter(function (t) { return !q || (t.task + ' ' + t.owner + ' ' + t.given_by + ' ' + (t.related || '')).toLowerCase().indexOf(q) > -1; });
+}
+function scopeBar() {
+  var ss = scopes();
+  return '<div class="row" style="justify-content:space-between"><div class="scope">' + (ss.length > 1 ? ss.map(function (x) { return '<button class="pill' + (x[0] === APP.scope ? ' on' : '') + '" onclick="APP.scope=\'' + x[0] + '\';go(APP.view)">' + x[1] + '</button>'; }).join('') : '') + '</div>' +
+    '<span class="muted">' + filtered().length + ' tasks</span></div>';
+}
+function redraw() { if (APP.view === 'tasks') drawList(); else if (APP.view === 'kanban') drawBoard(); else if (APP.view === 'cal') drawCal(); }
+var isOpen = function (t) { return ['Sent', 'Accepted', 'Rework', 'Red Flag'].indexOf(t.status) > -1; };
+function dueLabel(d) {
+  if (!d) return ''; if (d === APP.today) return 'Today'; if (d === addDays(APP.today, 1)) return 'Tomorrow'; if (d === addDays(APP.today, -1)) return 'Yesterday';
+  return fmtDate(d);
+}
+function circ(t) {
+  if (t.status === 'Closed') return '<span class="circ done">✓</span>';
+  if (t.status === 'QC pending') return '<span class="circ qc" title="Waiting for quality check">✓</span>';
+  if (isOpen(t) && t.current_due < APP.today) return '<span class="circ red"></span>';
+  return '<span class="circ"></span>';
+}
+
+// List: grouped like Any.do (Overdue, Today, Tomorrow, This week, Later), columns like Asana
+VIEWS.tasks = function () { return loadTasks().then(drawList); };
+function drawList() {
+  var all = filtered(), d1 = addDays(APP.today, 1), d7 = addDays(APP.today, 7);
+  var G = [['Overdue', function (t) { return isOpen(t) && t.current_due < APP.today; }, 'red'],
+    ['Today', function (t) { return isOpen(t) && t.current_due === APP.today; }],
+    ['Tomorrow', function (t) { return isOpen(t) && t.current_due === d1; }],
+    ['This week', function (t) { return isOpen(t) && t.current_due > d1 && t.current_due <= d7; }],
+    ['Later', function (t) { return isOpen(t) && (t.current_due > d7 || !t.current_due); }],
+    ['Waiting for quality check', function (t) { return t.status === 'QC pending'; }],
+    ['Done in the last 14 days', function (t) { return t.status === 'Closed'; }, 'closed']];
+  APP.collapsed = APP.collapsed || { 'Done in the last 14 days': true };
+  var h = scopeBar();
+  if (canCreate()) h += '<form class="quick" onsubmit="return quickAdd(event)"><span style="color:var(--muted);font-size:20px">+</span><input id="qa" placeholder="Add a task… e.g. Rahul finish Vexana choker by Friday high" autocomplete="off"><button class="btn small" type="submit">Add</button></form>';
+  var any = false;
+  h += '<div class="tl-box"><div class="tl-head"><span></span><span>Task</span><span>Owner</span><span>Due</span><span>Priority</span></div>';
+  G.forEach(function (g) {
+    var rows = all.filter(g[1]); if (!rows.length) return; any = true;
+    var col = APP.collapsed[g[0]];
+    h += '<div class="tl-group"><button class="tl-gh' + (g[2] === 'red' ? ' red' : '') + '" style="padding-left:12px" onclick="APP.collapsed[\'' + g[0] + '\']=!APP.collapsed[\'' + g[0] + '\'];drawList()">' + (col ? '▸' : '▾') + ' ' + g[0] + ' <span class="n">' + rows.length + '</span></button>';
+    if (!col) h += rows.map(function (t) {
+      APP.tasks[t.id] = t; var late = isOpen(t) && t.current_due < APP.today;
+      return '<button class="tl-row" onclick="openTask(' + t.id + ')">' + circ(t) +
+        '<span style="min-width:0"><span class="ttl" style="display:block">' + e(t.task) + '</span><span class="sub">' + (APP.scope !== 'mine' ? '<span class="mob">' + e(t.owner) + ' · </span>' : '') + (t.status === 'Rework' ? 'Rework · ' : '') + 'From ' + e(t.given_by) + (t.related ? ' · ' + e(t.related) : '') + ((t.updates || []).length ? ' · ' + t.updates.length + ' update' + (t.updates.length > 1 ? 's' : '') : '') + '</span></span>' +
+        '<span class="who2">' + avatar(t.owner, true) + '<span>' + e(t.owner) + '</span></span>' +
+        '<span class="due' + (late ? ' late' : '') + '">' + e(dueLabel(t.current_due)) + '</span>' +
+        '<span class="pr"><span class="pdot p-' + e(t.priority) + '"></span>' + e(t.priority) + '</span></button>';
+    }).join('');
+    h += '</div>';
+  });
+  h += '</div>';
+  if (!any) h = h.replace('<div class="tl-box"><div class="tl-head"><span></span><span>Task</span><span>Owner</span><span>Due</span><span>Priority</span></div></div>', '<div class="card"><p class="empty">No tasks here' + (APP.q ? ' for “' + e(APP.q) + '”' : '') + '.</p></div>');
+  $('view').innerHTML = h;
+}
+function quickAdd(ev) {
+  ev.preventDefault(); var t = $('qa').value.trim(); if (!t) return false;
+  APP.pendingSpeech = t; go('new'); return false;
+}
+
+// Board: Trello-style columns by stage
+VIEWS.kanban = function () { return loadTasks().then(drawBoard); };
+function drawBoard() {
+  var all = filtered();
+  var C = [['To do', function (t) { return (t.status === 'Accepted' || t.status === 'Sent') && t.current_due >= APP.today; }, ''],
+    ['Overdue', function (t) { return isOpen(t) && t.current_due < APP.today; }, 'c-late'],
+    ['Rework', function (t) { return t.status === 'Rework' && t.current_due >= APP.today; }, ''],
+    ['Quality check', function (t) { return t.status === 'QC pending'; }, 'c-qc'],
+    ['Done', function (t) { return t.status === 'Closed'; }, 'c-done']];
+  var h = scopeBar() + '<div class="kb">';
+  C.forEach(function (c) {
+    var rows = all.filter(c[1]).sort(function (a, b) { return (a.current_due || '') < (b.current_due || '') ? -1 : 1; });
+    h += '<section class="kcol ' + c[2] + '"><h3>' + c[0] + '<span class="n">' + rows.length + '</span></h3>' + (rows.length ? rows.map(function (t) {
+      APP.tasks[t.id] = t; var late = isOpen(t) && t.current_due < APP.today, td = t.current_due === APP.today;
+      return '<button class="kcard" onclick="openTask(' + t.id + ')"><span class="lbl p-' + e(t.priority) + '"></span><span style="font-weight:600">' + e(t.task) + '</span>' +
+        '<span class="ft"><span class="badge' + (late ? ' late' : td ? ' today' : '') + '">' + e(t.status === 'Closed' ? 'Closed' : dueLabel(t.current_due)) + '</span>' +
+        ((t.attachments || []).length || (t.updates || []).length ? '<span>' + ((t.updates || []).length ? '💬 ' + t.updates.length : '') + ((t.attachments || []).length ? ' 📎' : '') + '</span>' : '') + avatar(t.owner, true) + '</span></button>';
+    }).join('') : '<p class="empty" style="padding:4px">Nothing here</p>') + '</section>';
+  });
+  $('view').innerHTML = h + '</div>';
+}
+
+// Calendar: month grid (iPad/desktop) and day-by-day agenda (phone)
+VIEWS.cal = function () { return loadTasks().then(drawCal); };
+function drawCal() {
+  var all = filtered().filter(function (t) { return t.current_due && t.status !== 'Withdrawn'; });
+  var m = APP.calMonth || APP.today.slice(0, 7), y = +m.slice(0, 4), mo = +m.slice(5, 7) - 1;
+  var first = new Date(Date.UTC(y, mo, 1)), startDow = (first.getUTCDay() + 6) % 7; // Monday first
+  var gridStart = addDays(first.toISOString().slice(0, 10), -startDow);
+  var byDay = {}; all.forEach(function (t) { var d = String(t.current_due).slice(0, 10); (byDay[d] = byDay[d] || []).push(t); APP.tasks[t.id] = t; });
+  var name = first.toLocaleDateString('en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  var shift = function (k) { var d = new Date(Date.UTC(y, mo + k, 1)); return d.toISOString().slice(0, 7); };
+  var h = scopeBar() + '<div class="calh"><h2>' + e(name) + '</h2><div class="row"><button class="btn sec small" onclick="APP.calMonth=\'' + shift(-1) + '\';drawCal()">‹ Prev</button><button class="btn sec small" onclick="APP.calMonth=null;drawCal()">Today</button><button class="btn sec small" onclick="APP.calMonth=\'' + shift(1) + '\';drawCal()">Next ›</button></div></div>';
+  h += '<div class="calg">' + ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(function (d) { return '<div class="dh">' + d + '</div>'; }).join('');
+  for (var i = 0; i < 42; i++) {
+    var d = addDays(gridStart, i), list = byDay[d] || [], inM = +d.slice(5, 7) - 1 === mo;
+    if (i === 35 && !inM) break;
+    h += '<div class="dc' + (inM ? '' : ' out') + (d === APP.today ? ' td' : '') + '"><span class="dn">' + (+d.slice(8)) + '</span>' +
+      list.slice(0, 3).map(function (t) { return '<button class="ev2 ' + e(t.priority) + (t.status === 'Closed' ? ' done' : '') + '" onclick="openTask(' + t.id + ')" title="' + e(t.owner + ': ' + t.task) + '">' + e(t.owner.split(' ')[0] + ': ' + t.task) + '</button>'; }).join('') +
+      (list.length > 3 ? '<span class="more">+' + (list.length - 3) + ' more</span>' : '') + '</div>';
+  }
+  h += '</div><div class="agenda">';
+  var days = Object.keys(byDay).filter(function (d) { return d.slice(0, 7) === m; }).sort();
+  h += days.length ? days.map(function (d) { return '<section class="list"><h2' + (d === APP.today ? ' style="color:var(--maroon)"' : '') + '>' + e(dueLabel(d)) + (d === APP.today || d === addDays(APP.today, 1) || d === addDays(APP.today, -1) ? ' · ' + e(fmtDate(d)) : '') + '</h2>' + byDay[d].map(function (t) { return taskCard(t, t.owner + ' · from ' + t.given_by); }).join('') + '</section>'; }).join('') : '<p class="empty">No tasks due this month.</p>';
+  $('view').innerHTML = h + '</div>';
 }
 
 // ---------- My Day ----------
@@ -543,6 +810,7 @@ VIEWS.new = function () {
   h += '<aside class="card" style="flex:1 1 260px;min-width:0" id="nload"><h2>Owner’s load</h2><p class="empty">Choose an owner.</p></aside></div>';
   $('view').innerHTML = h;
   $('ns').onclick = submitTask;
+  if (APP.pendingSpeech) { var ps = APP.pendingSpeech; APP.pendingSpeech = null; fillFromSpeech(ps); }
   return Promise.resolve();
 };
 // ---------- speak a task: the phone's own speech recognition (free), then fill the form ----------
@@ -806,7 +1074,9 @@ function editPerson(id) {
 function start() {
   return call('api_boot').then(function (b) {
     APP.me = b.me; APP.users = b.users; APP.today = b.today; APP.working = b.working; APP.maxMB = b.maxMB; APP.highCap = b.highCap; APP.cutoff = b.cutoff; APP.stt = !!b.stt; APP.isTeamLead = b.isTeamLead;
-    $('hdr').hidden = false; $('who').textContent = b.me.name + ' · ' + (b.me.role || b.me.access);
+    $('hdr').hidden = false; $('side').hidden = false; $('bnav').hidden = false; $('shell').classList.remove('noshell');
+    $('sName').textContent = b.me.name; $('sRole').textContent = b.me.role || b.me.access; $('sAv').outerHTML = avatar(b.me.name);
+    $('sNew').hidden = $('hNew').hidden = !canCreate();
     go('day');
   }).catch(function (m) { sb.auth.signOut(); showLogin(m); });
 }
