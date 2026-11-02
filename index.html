@@ -75,6 +75,39 @@ pre.log{white-space:pre-wrap;font-size:12px;color:var(--muted);margin:0}
 .att{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;font-size:14px;border-top:1px solid #E8DFD3;padding-top:8px}
 .att img,.att video{max-width:160px;max-height:120px;border-radius:8px}
 .att audio{max-width:240px}
+.hello h1{font-size:34px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.tile .tl,.next .tl{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)}
+.tile b{font-size:34px;line-height:1;font-variant-numeric:tabular-nums}
+.tile b small{font-size:14px;font-weight:600;color:var(--muted)}
+.tile.dark{background:var(--maroon);border-color:var(--maroon);color:#fff}
+.tile.dark .tl{color:#E9C9A0}.tile.dark span:not(.tl){font-size:13px}
+.next{background:var(--goldbg);border:1px solid #DCC6A2;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.next b{font:400 22px/1.25 'Agatho',Georgia,serif;color:var(--maroon)}
+.next.late{background:var(--redbg);border-color:#E7B9B5}.next.late .tl{color:var(--red)}
+.next.done{background:var(--greenbg);border-color:#BCD8BB}.next.done .tl{color:var(--green)}
+.btn.light{background:var(--maroon);color:#fff}
+.timeline{position:relative;display:flex;flex-direction:column}
+.ev{display:grid;grid-template-columns:74px 18px 1fr auto auto;gap:10px;align-items:center;padding:10px 0;position:relative}
+.ev .when{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--muted);text-align:right}
+.ev .dot{width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #BFAE97;justify-self:center;z-index:1}
+.ev::before{content:'';position:absolute;left:91px;top:0;bottom:0;width:2px;background:#E8DFD3}
+.ev .what{display:flex;flex-direction:column;gap:1px;min-width:0}
+.ev .what span:first-child{font-weight:600}
+.ev.ok .dot{background:var(--green);border-color:var(--green)}
+.ev.ok .what span:first-child{color:var(--muted);text-decoration:line-through}
+.ev.warn .dot{background:var(--gold);border-color:var(--gold)}.ev.warn .when{color:var(--red)}
+.ev.bad .dot{background:var(--red);border-color:var(--red)}
+.ev.task-ev .dot{border-radius:3px;border-color:var(--maroon)}
+@media(max-width:560px){.ev .chip,.ev .btn{grid-column:3;justify-self:start}}
+.now{display:flex;align-items:center;gap:8px;margin:2px 0;font-size:12px;font-weight:700;color:var(--red)}
+.now::before{content:'';width:82px}.now::after{content:'';flex:1;height:2px;background:var(--red);opacity:.5}
+a.btn{display:inline-flex;align-items:center;text-decoration:none}
+.tile .barw{flex:none;min-width:0}
+@media(max-width:560px){.tiles{grid-template-columns:repeat(3,1fr);gap:8px}.tile{padding:10px;gap:4px}.tile b{font-size:26px}.tile b small{display:block;font-size:12px;margin-top:4px}.tile .tl{font-size:10px}.tile .muted,.tile.dark span:not(.tl){font-size:11px}.ev{grid-template-columns:62px 14px 1fr}.ev::before{left:74px}.now::before{width:70px}}
+.where{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.where>div{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 .btn.rec{background:var(--red);color:#fff;border-color:var(--red)}
 </style>
 </head>
@@ -285,22 +318,69 @@ function go(v) {
 }
 
 // ---------- My Day ----------
+function nowHM() { var d = new Date(Date.now() + (330 + new Date().getTimezoneOffset()) * 60000); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+function hm12(t) { var h = +t.slice(0, 2), m = t.slice(3, 5); return ((h + 11) % 12 + 1) + (m === '00' ? '' : ':' + m) + (h < 12 ? ' AM' : ' PM'); }
 VIEWS.day = function () {
   return call('api_my_day').then(function (d) {
     var open = d.tasks.filter(function (t) { return ['Sent', 'Accepted', 'Rework', 'QC pending'].indexOf(t.status) > -1; });
     var due = open.filter(function (t) { return t.current_due <= APP.today || t.status === 'Sent' || t.status === 'Rework'; });
     var later = open.filter(function (t) { return due.indexOf(t) < 0; });
     var closed = d.tasks.filter(function (t) { return open.indexOf(t) < 0; });
-    var diff = (d.score !== null && d.last !== null) ? Math.round(d.last - d.score) : null;
-    var h = '<div><h1>' + e(APP.me.name) + '’s day</h1><span class="muted">' + e(fmtDate(APP.today)) + (APP.working ? '' : ' · holiday or weekly off') + '</span></div>';
-    h += '<section class="score"><div class="row" style="justify-content:space-between"><span>My score this week</span><span>Last week ' + pct(d.last) + '</span></div>' +
-      '<div class="row"><b>' + pct(d.score) + '</b>' + (diff !== null ? '<span class="chip" style="background:#7A2C3E;color:#fff">' + (diff >= 0 ? diff + ' points better' : (-diff) + ' points worse') + '</span>' : '') + '</div>' +
-      '<span style="font-size:13px">Minus = my work not done on time, weighted by priority. Bring it to 0.</span></section>';
-    h += '<section class="list"><h2>Due now</h2>' + (due.length ? due.map(function (t) { return taskCard(t); }).join('') : '<p class="empty">Nothing due. Good.</p>') + '</section>';
+    var now = nowHM(), cut = (APP.cutoff || '19:00');
     APP.checks = {}; d.checks.forEach(function (c) { APP.checks[c.id] = c; });
-    h += '<section class="card"><h2>My checklist</h2>' + (d.checks.length ? d.checks.map(checkRow).join('') : '<p class="empty">No checklist items today.</p>') + '</section>';
-    if (later.length) h += '<section class="list"><h2>Coming up</h2>' + later.map(function (t) { return taskCard(t); }).join('') + '</section>';
+    var isDone = function (c) { return ['Done', 'Done late'].indexOf(c.status) > -1; };
+    var doneN = d.checks.filter(isDone).length, totN = d.checks.length;
+    var high = open.filter(function (t) { return t.priority === 'High'; }).length;
+    // one list for today: checklist items at their time, tasks due today at the 7 PM cutoff
+    var items = d.checks.map(function (c) { var t = String(c.due_time).slice(0, 5); return { kind: 'c', t: c.due_date < APP.today ? '00:00' : t, c: c, late: c.due_date < APP.today }; })
+      .concat(due.filter(function (t) { return t.status !== 'QC pending'; }).map(function (t) { return { kind: 't', t: cut, k: t, late: t.current_due < APP.today }; }))
+      .sort(function (x, y) { return x.t < y.t ? -1 : x.t > y.t ? 1 : 0; });
+    var pending = items.filter(function (i) { return i.kind === 't' || !isDone(i.c) && ['Not done', 'False tick'].indexOf(i.c.status) < 0; });
+    var next = pending[0];
+    var h = '<div class="hello"><div><span class="muted">' + e(fmtDate(APP.today)) + (APP.working ? '' : ' · holiday or weekly off') + '</span><h1>Namaste ' + e(APP.me.name) + '</h1><span class="muted">' + e(APP.me.role || '') + (APP.me.department ? ' · ' + e(APP.me.department) : '') + '</span></div></div>';
+    // three tiles
+    var pctDone = totN ? Math.round(doneN * 100 / totN) : 0;
+    h += '<div class="tiles">' +
+      '<div class="tile"><span class="tl">Today’s checklist</span><b>' + doneN + '<small> of ' + totN + ' done</small></b><div class="barw"><div style="width:' + pctDone + '%;background:var(--green)"></div></div></div>' +
+      '<div class="tile"><span class="tl">My open tasks</span><b>' + open.length + '<small>' + (high ? ' · ' + high + ' high' : '') + '</small></b><span class="muted">' + (due.length ? due.length + ' due today or late' : 'None due today') + '</span></div>' +
+      '<div class="tile dark"><span class="tl">My score this week</span><b>' + (d.score === null ? '0%' : pct(d.score)) + '</b><span>' + (d.score === null ? 'Nothing missed yet. Keep it at 0.' : 'Minus = work not done on time. Bring it to 0.') + (d.last !== null ? ' Last week ' + pct(d.last) + '.' : '') + '</span></div>' +
+      '</div>';
+    // next up
+    if (next) {
+      var nl = next.kind === 'c' ? next.c.task : next.k.task, nt = next.late ? 'Late — from ' + fmtDate(next.kind === 'c' ? next.c.due_date : next.k.current_due) : (next.t <= now ? 'Overdue since ' + hm12(next.t) : 'Due by ' + hm12(next.t));
+      h += '<section class="next' + (next.late || next.t <= now ? ' late' : '') + '"><span class="tl">Do this next</span><b>' + e(nl) + '</b><div class="row" style="justify-content:space-between"><span>' + e(nt) + '</span>' +
+        (next.kind === 'c' ? '<button class="btn small light" onclick="openTick(' + next.c.id + ')">Tick with proof</button>' : '<button class="btn small light" onclick="openTask(' + next.k.id + ')">Open task</button>') + '</div></section>';
+      if (next.kind === 't') APP.tasks[next.k.id] = next.k;
+    } else if (totN || due.length) h += '<section class="next done"><span class="tl">All done for today</span><b>Everything on your list is ticked. Shabash.</b></section>';
+    // timeline
+    var tl = '', nowPut = false;
+    items.forEach(function (i) {
+      if (!nowPut && !i.late && i.t > now) { tl += '<div class="now"><span>Now ' + hm12(now) + '</span></div>'; nowPut = true; }
+      var st, cls, act = '';
+      if (i.kind === 'c') {
+        var c = i.c, dn = isDone(c), miss = ['Not done', 'False tick'].indexOf(c.status) > -1;
+        cls = dn ? 'ok' : miss ? 'bad' : (i.late || i.t <= now) ? 'warn' : '';
+        st = dn ? '<span class="chip ' + (c.status === 'Done' ? 'c-green' : 'c-gold') + '">' + e(c.status) + '</span>' : miss ? '<span class="chip c-red">' + e(c.status) + '</span>' : '';
+        act = dn || miss ? '' : '<button class="btn sec small" onclick="openTick(' + c.id + ')">Tick</button>';
+        tl += '<div class="ev ' + cls + '"><span class="when">' + (i.late ? 'Late' : hm12(i.t)) + '</span><span class="dot"></span><div class="what"><span>' + e(c.task) + '</span><span class="muted">Checklist · ' + e(c.frequency) + '</span></div>' + st + act + '</div>';
+      } else {
+        var k = i.k; APP.tasks[k.id] = k;
+        cls = 'task-ev ' + ((i.late || i.t <= now) ? 'warn' : '');
+        tl += '<div class="ev ' + cls + '"><span class="when">' + (i.late ? 'Late' : hm12(i.t)) + '</span><span class="dot"></span><div class="what"><span>' + e(k.task) + '</span><span class="muted">Task from ' + e(k.given_by) + '</span></div>' + prioChip(k.priority) + '<button class="btn sec small" onclick="openTask(' + k.id + ')">Open</button></div>';
+      }
+    });
+    if (!nowPut && items.length) tl += '<div class="now"><span>Now ' + hm12(now) + '</span></div>';
+    h += '<section class="card"><h2>My day</h2>' + (items.length ? '<div class="timeline">' + tl + '</div>' : '<p class="empty">Nothing for today. New tasks and checklist items appear here and in your calendar.</p>') + '</section>';
+    var qc = open.filter(function (t) { return t.status === 'QC pending'; });
+    if (qc.length) h += '<section class="list"><h2>Waiting for quality check</h2>' + qc.map(function (t) { return taskCard(t); }).join('') + '</section>';
+    if (later.filter(function (t) { return t.status !== 'QC pending'; }).length) h += '<section class="list"><h2>Coming up</h2>' + later.filter(function (t) { return t.status !== 'QC pending'; }).map(function (t) { return taskCard(t); }).join('') + '</section>';
     if (closed.length) h += '<section class="list"><h2>Recently closed</h2>' + closed.map(function (t) { return taskCard(t); }).join('') + '</section>';
+    // where reminders come
+    var m = APP.me;
+    h += '<section class="card"><h2>Where my reminders come</h2><div class="where">' +
+      '<div><b>Google Calendar</b><span class="muted">' + (m.cal ? (m.calShared ? 'In the shared ' + e(m.cal) + ' calendar, marked with your name' : 'In your own calendar (' + e(m.cal) + ')') + '. Checklists show 30 minutes before their time; tasks show on the due day.' : 'You have no company email, so reminders are only here and on your printed sheet.') + '</span>' + (m.cal ? '<a class="btn sec small" target="_blank" rel="noopener" href="https://calendar.google.com/">Open Calendar</a>' : '') + '</div>' +
+      '<div><b>Google Chat</b><span class="muted">' + (m.chat ? 'Navrasa Tasks Bot messages you at 9:30 AM, 1:30 PM and 5:30 PM with what is due.' : 'Not set up for you yet.') + '</span>' + (m.chat ? '<a class="btn sec small" target="_blank" rel="noopener" href="https://chat.google.com/">Open Chat</a>' : '') + '</div>' +
+      '</div></section>';
     $('view').innerHTML = h;
   });
 };
@@ -672,7 +752,7 @@ function editPerson(id) {
 // ---------- start ----------
 function start() {
   return call('api_boot').then(function (b) {
-    APP.me = b.me; APP.users = b.users; APP.today = b.today; APP.working = b.working; APP.maxMB = b.maxMB; APP.highCap = b.highCap; APP.isTeamLead = b.isTeamLead;
+    APP.me = b.me; APP.users = b.users; APP.today = b.today; APP.working = b.working; APP.maxMB = b.maxMB; APP.highCap = b.highCap; APP.cutoff = b.cutoff; APP.isTeamLead = b.isTeamLead;
     $('hdr').hidden = false; $('who').textContent = b.me.name + ' · ' + (b.me.role || b.me.access);
     go('day');
   }).catch(function (m) { sb.auth.signOut(); showLogin(m); });
