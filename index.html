@@ -192,6 +192,35 @@ function links(arr, signed) {
   }).join('');
 }
 
+// ---------- speech to text (Cloudflare Whisper via our server): Hindi, Hinglish or English in, English text out ----------
+function recordClip(btn, maxSec, idle) {
+  return new Promise(function (ok, bad) {
+    if (!navigator.mediaDevices || !window.MediaRecorder) return bad('This phone cannot record here.');
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+      var type = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : (MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : '');
+      var mr = new MediaRecorder(stream, type ? { mimeType: type } : undefined), chunks = [], t0 = Date.now(), tm;
+      REC = mr;
+      mr.ondataavailable = function (ev) { if (ev.data && ev.data.size) chunks.push(ev.data); };
+      mr.onstop = function () { stream.getTracks().forEach(function (t) { t.stop(); }); clearInterval(tm); REC = null; btn.textContent = idle; btn.classList.remove('rec'); ok(new Blob(chunks, { type: mr.mimeType || type || 'audio/webm' })); };
+      mr.start(); btn.classList.add('rec');
+      tm = setInterval(function () { var sec = Math.round((Date.now() - t0) / 1000); btn.textContent = 'Stop · ' + Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); if (sec >= maxSec) mr.stop(); }, 300);
+    }).catch(function () { bad('Allow the microphone first.'); });
+  });
+}
+function sttSend(blob, mode) {
+  return sb.auth.getSession().then(function (ss) {
+    return fetch(FN + '?op=stt&mode=' + mode, { method: 'POST', headers: { Authorization: 'Bearer ' + (ss.data.session ? ss.data.session.access_token : ''), 'Content-Type': blob.type || 'audio/webm' }, body: blob });
+  }).then(function (r) { return r.json(); }).then(function (j) { if (j.text !== undefined) return j.text; throw j.error || 'Could not read the voice.'; });
+}
+// after a voice note is recorded in a box that has a comment field, put its words in the comment too
+var NOTE_FOR = { dm: 'dn', um: 'un' };
+function transcribeInto(id, file) {
+  var tgt = NOTE_FOR[id]; if (!APP.stt || !tgt || !$(tgt)) return;
+  var box = $(tgt), was = box.placeholder; box.placeholder = 'Writing your voice note as text…';
+  sttSend(file, 'note').then(function (t) { box.placeholder = was; if (t) box.value = (box.value ? box.value + ' ' : '') + t; })
+    .catch(function () { box.placeholder = was; });
+}
+
 // ---------- record / capture / choose files ----------
 var MEDIA = {}, REC = null, REC_T = null;
 function mediaBox(id, label) {
@@ -248,7 +277,8 @@ function recVoice(id) {
       stream.getTracks().forEach(function (t) { t.stop(); });
       clearInterval(REC_T); REC = null;
       var mt = mr.mimeType || type || 'audio/webm', ext = /mp4/.test(mt) ? 'm4a' : 'webm', now = new Date();
-      MEDIA[id].push(new File(chunks, 'voice-note-' + String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0') + '.' + ext, { type: mt }));
+      var vf = new File(chunks, 'voice-note-' + String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0') + '.' + ext, { type: mt });
+      MEDIA[id].push(vf); transcribeInto(id, vf);
       btn.textContent = 'Record voice'; btn.classList.remove('rec'); drawMedia(id);
     };
     mr.start(); btn.classList.add('rec');
@@ -462,6 +492,13 @@ var DICT = null;
 function dictate(id) {
   var R = window.SpeechRecognition || window.webkitSpeechRecognition, b = $(id + '-mic');
   if (DICT) { DICT.stop(); return; }
+  if (REC) { REC.stop(); return; }
+  if (APP.stt) {
+    recordClip(b, 120, 'Speak').then(function (blob) { b.textContent = 'Writing…'; return sttSend(blob, 'note'); })
+      .then(function (t) { b.textContent = 'Speak'; if (t) $(id).value = ($(id).value ? $(id).value + ' ' : '') + t; })
+      .catch(function (m) { b.textContent = 'Speak'; toast(m); });
+    return;
+  }
   if (!R) { toast('This browser cannot listen. Use Record voice instead.'); return; }
   var r = new R(), start = $(id).value ? $(id).value + ' ' : ''; DICT = r;
   r.lang = 'en-IN'; r.interimResults = true; r.continuous = true;
@@ -513,6 +550,14 @@ var SPK = null;
 function speakTask() {
   var R = window.SpeechRecognition || window.webkitSpeechRecognition, b = $('spk');
   if (SPK) { SPK.stop(); return; }
+  if (REC) { REC.stop(); return; }
+  if (APP.stt) {
+    $('spt').textContent = 'Listening… speak in Hindi or English, then tap Stop.';
+    recordClip(b, 90, 'Speak').then(function (blob) { $('spt').textContent = 'Writing it down…'; b.textContent = 'Wait…'; return sttSend(blob, 'task'); })
+      .then(function (t) { b.textContent = 'Speak'; if (t) fillFromSpeech(t); else $('spt').textContent = 'Could not hear anything. Try again.'; })
+      .catch(function (m) { b.textContent = 'Speak'; $('spt').textContent = ''; toast(m); });
+    return;
+  }
   if (!R) { toast('This browser cannot listen. Use Chrome on Android or Safari on iPhone.'); return; }
   var r = new R(), text = ''; SPK = r;
   r.lang = 'en-IN'; r.interimResults = true; r.continuous = true;
@@ -760,7 +805,7 @@ function editPerson(id) {
 // ---------- start ----------
 function start() {
   return call('api_boot').then(function (b) {
-    APP.me = b.me; APP.users = b.users; APP.today = b.today; APP.working = b.working; APP.maxMB = b.maxMB; APP.highCap = b.highCap; APP.cutoff = b.cutoff; APP.isTeamLead = b.isTeamLead;
+    APP.me = b.me; APP.users = b.users; APP.today = b.today; APP.working = b.working; APP.maxMB = b.maxMB; APP.highCap = b.highCap; APP.cutoff = b.cutoff; APP.stt = !!b.stt; APP.isTeamLead = b.isTeamLead;
     $('hdr').hidden = false; $('who').textContent = b.me.name + ' · ' + (b.me.role || b.me.access);
     go('day');
   }).catch(function (m) { sb.auth.signOut(); showLogin(m); });
