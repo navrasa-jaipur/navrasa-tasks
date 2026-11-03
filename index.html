@@ -151,6 +151,7 @@ header .bar{max-width:none;display:flex;align-items:center;gap:12px;padding:10px
 main{max-width:1180px;width:100%}
 .av{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;font-size:11.5px;font-weight:700;color:#fff;flex:none}
 .av.sm{width:22px;height:22px;font-size:10px}
+img.av{object-fit:cover;display:inline-block;background:var(--chip)}
 #bnav{position:fixed;left:0;right:0;bottom:0;z-index:15;background:var(--card);border-top:1px solid var(--line);display:none;padding:4px max(6px,env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left))}
 #bnav button{flex:1;font:inherit;font-size:11px;border:none;background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;cursor:pointer;min-height:50px}
 #bnav button .ic{font-size:19px;line-height:1}
@@ -495,15 +496,60 @@ function go(v) {
 }
 function moreMenu() {
   var n = navList(), items = n.manage.concat(canCreate() ? [['new', 'New task']] : []);
-  sheet('<h2>More</h2><div class="list">' + items.map(function (x) { return '<button class="card task" style="flex-direction:row;align-items:center;gap:12px" onclick="go(\'' + x[0] + '\')"><span style="font-size:20px;width:24px;text-align:center">' + ICON[x[0]] + '</span><b>' + x[1] + '</b></button>'; }).join('') +
+  var mine = '<button class="card task" style="flex-direction:row;align-items:center;gap:12px" onclick="photoSheet(APP.me.id, APP.me.name)">' + avatar(APP.me.name) + '<b>My photo</b></button>';
+  sheet('<h2>More</h2><div class="list">' + mine + items.map(function (x) { return '<button class="card task" style="flex-direction:row;align-items:center;gap:12px" onclick="go(\'' + x[0] + '\')"><span style="font-size:20px;width:24px;text-align:center">' + ICON[x[0]] + '</span><b>' + x[1] + '</b></button>'; }).join('') +
     (APP.me.access === 'Admin' ? '<a class="card task" style="flex-direction:row;align-items:center;gap:12px;text-decoration:none" href="hub.html"><span style="font-size:20px;width:24px;text-align:center">' + ICON.hub + '</span><b>All Navrasa systems (Hub)</b></a>' : '') +
     '<button class="card task" style="flex-direction:row;align-items:center;gap:12px" onclick="signOut()"><span style="font-size:20px;width:24px;text-align:center">⇥</span><b>Sign out</b></button></div>');
 }
-function avatar(name, sm) {
+function avatar(name, sm, px) {
+  var sz = px ? 'width:' + px + 'px;height:' + px + 'px;font-size:' + Math.round(px / 2.8) + 'px;' : '';
+  var ph = (APP.photos || {})[name];
+  if (ph) return '<img class="av' + (sm ? ' sm' : '') + '" style="' + sz + '" src="' + e(ph) + '" alt="' + e(name) + '" title="' + e(name) + '" loading="lazy">';
   var n = String(name || '?'), h = 0; for (var i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) | 0;
   var cols = ['#7A2C3E', '#8A5A1E', '#2F6B3A', '#3D5A80', '#6B3FA0', '#9C4F2E', '#1F6F78', '#5A1324'];
   var ini = n.replace(/\b(Sir|Ji)\b/g, '').trim().split(/\s+/).map(function (w) { return w.charAt(0); }).slice(0, 2).join('').toUpperCase();
-  return '<span class="av' + (sm ? ' sm' : '') + '" style="background:' + cols[Math.abs(h) % cols.length] + '" title="' + e(n) + '">' + e(ini) + '</span>';
+  return '<span class="av' + (sm ? ' sm' : '') + '" style="' + sz + 'background:' + cols[Math.abs(h) % cols.length] + '" title="' + e(n) + '">' + e(ini) + '</span>';
+}
+
+
+// ---------- profile photos (square, 320 px JPEG, in the public "nas-avatars" store) ----------
+function squarePhoto(f) {
+  return new Promise(function (ok, bad) {
+    var img = new Image(), url = URL.createObjectURL(f);
+    img.onload = function () {
+      var s = Math.min(img.width, img.height), c = document.createElement('canvas'); c.width = c.height = 320;
+      c.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, 320, 320); URL.revokeObjectURL(url);
+      c.toBlob(function (b) { b ? ok(b) : bad('Could not read the photo.'); }, 'image/jpeg', 0.82);
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); bad('This file is not a photo.'); };
+    img.src = url;
+  });
+}
+function photoSheet(pid, name) {
+  var cur = (APP.photos || {})[name];
+  sheet('<h2>' + (pid === APP.me.id ? 'My photo' : 'Photo · ' + e(name)) + '</h2><div style="display:flex;justify-content:center"><div id="phv" style="width:160px;height:160px;border-radius:50%;overflow:hidden;background:var(--chip);display:grid;place-items:center;font-size:56px;color:var(--maroon)">' +
+    (cur ? '<img src="' + e(cur) + '" style="width:100%;height:100%;object-fit:cover">' : e(String(name || '?').charAt(0))) + '</div></div>' +
+    '<span class="muted" style="text-align:center">A clear face photo, so everyone knows who is who.</span>' +
+    '<div class="row" style="justify-content:center"><label class="btn small">Take photo<input type="file" accept="image/*" capture="user" hidden onchange="savePhoto(' + pid + ',\'' + e(name).replace(/'/g, "\\'") + '\',this)"></label>' +
+    '<label class="btn sec small">Choose photo<input type="file" accept="image/*" hidden onchange="savePhoto(' + pid + ',\'' + e(name).replace(/'/g, "\\'") + '\',this)"></label>' +
+    (cur ? '<button class="btn sec small" onclick="savePhoto(' + pid + ',\'' + e(name).replace(/'/g, "\\'") + '\',null)">Remove</button>' : '') + '</div><div id="phe"></div><button class="btn sec" onclick="closeSheet()">Close</button>');
+}
+function savePhoto(pid, name, input) {
+  var f = input && input.files && input.files[0]; if (input && !f) return;
+  $('phe').innerHTML = '<p class="muted" style="text-align:center">Saving…</p>';
+  (f ? squarePhoto(f).then(function (b) {
+    var path = 'p' + pid + '-' + Date.now() + '.jpg';
+    return sb.storage.from('nas-avatars').upload(path, b, { contentType: 'image/jpeg' }).then(function (r) {
+      if (r.error) throw r.error.message;
+      return sb.storage.from('nas-avatars').getPublicUrl(path).data.publicUrl;
+    });
+  }) : Promise.resolve(null)).then(function (url) {
+    return call('api_set_photo', { p_id: pid, p_url: url }).then(function () { return url; });
+  }).then(function (url) {
+    APP.photos = APP.photos || {}; if (url) APP.photos[name] = url; else delete APP.photos[name];
+    if (pid === APP.me.id) { APP.me.photo = url; $('sAv').innerHTML = avatar(APP.me.name); }
+    closeSheet(); toast(url ? 'Photo saved' : 'Photo removed'); go(APP.view);
+  }).catch(function (m) { errBox('phe', m); });
 }
 
 // ---------- tasks: shared data for List, Board and Calendar ----------
@@ -689,7 +735,7 @@ VIEWS.day = function () {
       .sort(function (x, y) { return x.t < y.t ? -1 : x.t > y.t ? 1 : 0; });
     var pending = items.filter(function (i) { return i.kind === 't' || !isDone(i.c) && ['Not done', 'False tick'].indexOf(i.c.status) < 0; });
     var next = pending[0];
-    var h = '<div id="inst"></div><div class="hello"><div><span class="muted">' + e(fmtDate(APP.today)) + (APP.working ? '' : ' · holiday or weekly off') + '</span><h1>Namaste ' + e(APP.me.name) + '</h1><span class="muted">' + e(APP.me.role || '') + (APP.me.department ? ' · ' + e(APP.me.department) : '') + '</span></div></div>';
+    var h = '<div id="inst"></div>' + (APP.me.photo ? '' : '<button class="next" style="flex-direction:row;align-items:center;gap:14px;cursor:pointer;font:inherit;text-align:left;width:100%" onclick="photoSheet(APP.me.id, APP.me.name)"><span style="font-size:30px">📷</span><span><b style="font-size:18px">Add your photo</b><br><span class="muted">Your profile is not complete without it. Takes 10 seconds.</span></span></button>') + '<div class="hello" style="display:flex;gap:14px;align-items:center"><span onclick="photoSheet(APP.me.id, APP.me.name)" style="cursor:pointer">' + avatar(APP.me.name, false, 64) + '</span><div><span class="muted">' + e(fmtDate(APP.today)) + (APP.working ? '' : ' · holiday or weekly off') + '</span><h1>Namaste ' + e(APP.me.name) + '</h1><span class="muted">' + e(APP.me.role || '') + (APP.me.department ? ' · ' + e(APP.me.department) : '') + '</span></div></div>';
     // three tiles
     var pctDone = totN ? Math.round(doneN * 100 / totN) : 0;
     h += '<div class="tiles">' +
@@ -1082,11 +1128,12 @@ function saveRole(i, b) {
 // ---------- people ----------
 VIEWS.people = function () {
   return call('api_people').then(function (rows) {
-    APP.pp = {}; rows.forEach(function (r) { APP.pp[r.id] = r; });
-    var h = '<div class="row" style="justify-content:space-between;align-items:flex-end"><div><h1>People</h1><span class="muted">Office staff sign in with the Google email written here. Floor staff use a staff code and PIN.</span></div><button class="btn small" onclick="editPerson()">Add person</button></div>';
-    h += '<div class="tbl"><table><thead><tr><th>Name</th><th>Role</th><th>Department</th><th>HOD</th><th>Access</th><th>Login</th><th></th></tr></thead><tbody>' + rows.map(function (r) {
+    APP.pp = {}; rows.forEach(function (r) { APP.pp[r.id] = r; if (r.photo) { APP.photos = APP.photos || {}; APP.photos[r.name] = r.photo; } });
+    var noPhoto = rows.filter(function (r) { return r.active && !r.photo; }).length;
+    var h = '<div class="row" style="justify-content:space-between;align-items:flex-end"><div><h1>People</h1><span class="muted">Office staff sign in with the Google email written here. Floor staff use a staff code and PIN.' + (noPhoto ? ' <b style="color:var(--red)">' + noPhoto + ' people have no photo — tap “No photo” to add one.</b>' : '') + '</span></div><button class="btn small" onclick="editPerson()">Add person</button></div>';
+    h += '<div class="tbl"><table><thead><tr><th>Photo</th><th>Name</th><th>Role</th><th>Department</th><th>HOD</th><th>Access</th><th>Login</th><th></th></tr></thead><tbody>' + rows.map(function (r) {
       var login = r.staff_code ? 'Code ' + r.staff_code : (r.email || '<span style="color:var(--red)">Missing</span>');
-      return '<tr style="' + (r.active ? '' : 'opacity:.5') + '"><td><b>' + e(r.name) + '</b></td><td>' + e(r.role || '') + '</td><td>' + e(r.department || '') + '</td><td>' + e(r.hod || '') + '</td><td>' + e(r.access) + '</td>' +
+      return '<tr style="' + (r.active ? '' : 'opacity:.5') + '"><td><span style="cursor:pointer" onclick="photoSheet(' + r.id + ',\'' + e(r.name).replace(/'/g, "\\'") + '\')">' + (r.photo ? '<img class="av" src="' + e(r.photo) + '" alt="">' : '<span class="chip c-red">No photo</span>') + '</span></td><td><b>' + e(r.name) + '</b></td><td>' + e(r.role || '') + '</td><td>' + e(r.department || '') + '</td><td>' + e(r.hod || '') + '</td><td>' + e(r.access) + '</td>' +
         '<td>' + (r.staff_code ? e(login) : (r.email ? e(r.email) : login)) + (r.linked ? ' <span class="chip c-green">signed in</span>' : '') + '</td><td><button class="btn sec small" onclick="editPerson(' + r.id + ')">Edit</button></td></tr>';
     }).join('') + '</tbody></table></div>';
     $('view').innerHTML = h;
@@ -1095,7 +1142,7 @@ VIEWS.people = function () {
 function editPerson(id) {
   var r = id ? APP.pp[id] : { access: 'Member', active: true };
   var names = Object.keys(APP.pp).map(function (k) { return APP.pp[k].name; }).sort();
-  sheet('<h2>' + (id ? 'Edit ' + e(r.name) : 'Add person') + '</h2><div class="grid"><label>Name<input id="pn" value="' + e(r.name || '') + '"></label><label>Google email (office staff)<input id="pe2" value="' + e(r.email || '') + '" placeholder="name@thenavrasa.com"></label></div>' +
+  sheet('<h2>' + (id ? 'Edit ' + e(r.name) : 'Add person') + '</h2>' + (id ? '<div class="row">' + (r.photo ? '<img class="av" src="' + e(r.photo) + '" style="width:56px;height:56px">' : '<span class="chip c-red">No photo</span>') + '<button class="btn sec small" onclick="photoSheet(' + id + ',\'' + e(r.name).replace(/'/g, "\\'") + '\')">' + (r.photo ? 'Change photo' : 'Add photo') + '</button></div>' : '<span class="muted">Save first, then add the photo.</span>') + '<div class="grid"><label>Name<input id="pn" value="' + e(r.name || '') + '"></label><label>Google email (office staff)<input id="pe2" value="' + e(r.email || '') + '" placeholder="name@thenavrasa.com"></label></div>' +
     '<div class="grid"><label>Role<input id="pr" value="' + e(r.role || '') + '"></label><label>Department<input id="pd2" value="' + e(r.department || '') + '"></label>' +
     '<label>HOD<select id="ph"><option value="">None</option>' + names.map(function (n) { return '<option' + (n === r.hod ? ' selected' : '') + '>' + e(n) + '</option>'; }).join('') + '</select></label>' +
     '<label>Access<select id="pa">' + ['Member', 'HOD', 'PC', 'EA', 'Admin'].map(function (x) { return '<option' + (x === r.access ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></label></div>' +
@@ -1122,7 +1169,8 @@ function start() {
   return call('api_boot').then(function (b) {
     APP.me = b.me; APP.users = b.users; APP.today = b.today; APP.working = b.working; APP.maxMB = b.maxMB; APP.highCap = b.highCap; APP.cutoff = b.cutoff; APP.stt = !!b.stt; APP.isTeamLead = b.isTeamLead;
     $('hdr').hidden = false; $('side').hidden = false; $('bnav').hidden = false; $('shell').classList.remove('noshell');
-    $('sName').textContent = b.me.name; $('sRole').textContent = b.me.role || b.me.access; $('sAv').outerHTML = avatar(b.me.name);
+    $('sName').textContent = b.me.name; $('sRole').textContent = b.me.role || b.me.access; APP.photos = {}; (b.users || []).forEach(function (u) { if (u.photo) APP.photos[u.name] = u.photo; }); if (b.me.photo) APP.photos[b.me.name] = b.me.photo;
+    $('sAv').outerHTML = '<span id="sAv" onclick="photoSheet(APP.me.id, APP.me.name)" style="cursor:pointer" title="Change my photo">' + avatar(b.me.name) + '</span>';
     $('sNew').hidden = $('hNew').hidden = !canCreate();
     go('day');
   }).catch(function (m) { sb.auth.signOut(); showLogin(m); });
