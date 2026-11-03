@@ -114,6 +114,9 @@ pre.log{white-space:pre-wrap;font-size:12px;color:var(--muted);margin:0}
 a.btn{display:inline-flex;align-items:center;text-decoration:none}
 .tile .barw{flex:none;min-width:0}
 @media(max-width:560px){.tiles{grid-template-columns:repeat(3,1fr);gap:8px}.tile{padding:10px;gap:4px}.tile b{font-size:26px}.tile b small{display:block;font-size:12px;margin-top:4px}.tile .tl{font-size:10px}.tile .muted,.tile.dark span:not(.tl){font-size:11px}.ev{grid-template-columns:62px 14px 1fr}.ev::before{left:74px}.now::before{width:70px}}
+.clt{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;align-items:start}
+.clt-h{display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none}
+.clt-h::-webkit-details-marker{display:none}
 .where{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
 .where>div{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 
@@ -460,13 +463,14 @@ var VIEWS = {};
 function canPeople() { return APP.me.access === 'Admin' || APP.me.access === 'EA' || APP.me.department === 'HR'; }
 function canCreate() { var a = APP.me.access; return a === 'Admin' || a === 'EA' || a === 'HOD' || APP.isTeamLead; }
 function isBig() { var a = APP.me.access; return a === 'Admin' || a === 'EA' || a === 'PC'; }
-var ICON = { day: '☀', tasks: '☑', kanban: '▦', cal: '▤', new: '+', checks: '✓', board: '◆', team: '◎', setup: '≡', roles: '⚑', people: '☺', hub: '⌂', more: '⋯' };
-var TITLE = { day: 'My Day', tasks: 'Tasks', kanban: 'Tasks', cal: 'Tasks', new: 'New task', checks: 'Checks', board: 'Monday board', team: 'My team', setup: 'Checklists', roles: 'Roles', people: 'People' };
+var ICON = { clt: '☑', day: '☀', tasks: '☑', kanban: '▦', cal: '▤', new: '+', checks: '✓', board: '◆', team: '◎', setup: '≡', roles: '⚑', people: '☺', hub: '⌂', more: '⋯' };
+var TITLE = { clt: 'Checklists today', day: 'My Day', tasks: 'Tasks', kanban: 'Tasks', cal: 'Tasks', new: 'New task', checks: 'Checks', board: 'Monday board', team: 'My team', setup: 'Checklists', roles: 'Roles', people: 'People' };
 function navList() {
   var a = APP.me.access, work = [['day', 'My Day'], ['tasks', 'Tasks'], ['kanban', 'Board'], ['cal', 'Calendar']], manage = [];
-  if (a === 'Admin' || a === 'EA') manage.push(['checks', 'Checks'], ['board', 'Monday board'], ['setup', 'Checklists']);
-  else if (a === 'PC') manage.push(['checks', 'Checks'], ['board', 'Board & scores'], ['setup', 'Checklists']);
-  else if (a === 'HOD' || APP.isTeamLead) manage.push(['team', 'My team'], ['checks', 'Checks'], ['board', 'Scores'], ['setup', 'Checklists']);
+  if (a === 'Admin' || a === 'EA') manage.push(['clt', 'Checklists today'], ['checks', 'Checks'], ['board', 'Monday board'], ['setup', 'Checklist setup']);
+  else if (a === 'PC') manage.push(['clt', 'Checklists today'], ['checks', 'Checks'], ['board', 'Board & scores'], ['setup', 'Checklist setup']);
+  else if (a === 'HOD') manage.push(['clt', 'Checklists today'], ['team', 'My team'], ['checks', 'Checks'], ['board', 'Scores'], ['setup', 'Checklist setup']);
+  else if (APP.isTeamLead) manage.push(['team', 'My team'], ['checks', 'Checks'], ['board', 'Scores'], ['setup', 'Checklist setup']);
   else manage.push(['board', 'My score']);
   if (canPeople()) manage.push(['roles', 'Roles'], ['people', 'People']);
   return { work: work, manage: manage };
@@ -621,6 +625,33 @@ function drawCal() {
   h += days.length ? days.map(function (d) { return '<section class="list"><h2' + (d === APP.today ? ' style="color:var(--maroon)"' : '') + '>' + e(dueLabel(d)) + (d === APP.today || d === addDays(APP.today, 1) || d === addDays(APP.today, -1) ? ' · ' + e(fmtDate(d)) : '') + '</h2>' + byDay[d].map(function (t) { return taskCard(t, t.owner + ' · from ' + t.given_by); }).join('') + '</section>'; }).join('') : '<p class="empty">No tasks due this month.</p>';
   $('view').innerHTML = h + '</div>';
 }
+
+
+// ---------- Checklists today: everyone's list at a glance (Admin, EA, PC; HOD sees own team) ----------
+VIEWS.clt = function () {
+  return call('api_checks_today').then(function (rows) {
+    APP.clt = rows || [];
+    var tot = 0, done = 0, late = 0; APP.clt.forEach(function (r) { tot += +r.total; done += +r.done; late += +r.late; });
+    var f = APP.cltFilter || 'all';
+    var h = '<div class="tiles">' +
+      '<div class="tile"><span class="tl">People with checklists</span><b>' + APP.clt.length + '</b><span class="muted">' + APP.clt.filter(function (r) { return +r.pending === 0; }).length + ' fully done</span></div>' +
+      '<div class="tile"><span class="tl">Items done today</span><b>' + done + '<small> of ' + tot + '</small></b><div class="barw"><div style="width:' + (tot ? Math.round(done * 100 / tot) : 0) + '%;background:var(--green)"></div></div></div>' +
+      '<div class="tile dark"><span class="tl">Late right now</span><b>' + late + '</b><span>Past their time and not ticked</span></div></div>';
+    h += '<div class="scope">' + [['all', 'Everyone'], ['late', 'Has late items'], ['open', 'Not finished'], ['done', 'All done']].map(function (x) { return '<button class="pill' + (x[0] === f ? ' on' : '') + '" onclick="APP.cltFilter=\'' + x[0] + '\';go(\'clt\')">' + x[1] + '</button>'; }).join('') + '</div>';
+    var list = APP.clt.filter(function (r) { return f === 'all' || (f === 'late' && +r.late > 0) || (f === 'open' && +r.pending > 0) || (f === 'done' && +r.pending === 0); });
+    h += '<div class="clt">' + (list.length ? list.map(function (r) {
+      var pc = r.total ? Math.round(r.done * 100 / r.total) : 0;
+      return '<details class="card"><summary class="clt-h">' + avatar(r.owner) + '<span style="flex:1;min-width:0"><b>' + e(r.owner) + '</b><span class="muted" style="display:block;font-size:12.5px">' + e(r.role || r.department || '') + '</span></span>' +
+        (+r.late ? '<span class="chip c-red">' + r.late + ' late</span>' : '') + '<span class="num" style="font-weight:700">' + r.done + '/' + r.total + '</span>' +
+        '<div class="barw" style="flex:0 0 70px"><div style="width:' + pc + '%;background:' + (pc === 100 ? 'var(--green)' : +r.late ? 'var(--red)' : 'var(--gold)') + '"></div></div></summary>' +
+        r.items.map(function (c) {
+          var dn = c.status === 'Done' || c.status === 'Done late', bad = ['Not done', 'False tick', 'Overdue'].indexOf(c.status) > -1;
+          return '<div class="check"><span class="circ ' + (dn ? 'done' : bad ? 'red' : '') + '">' + (dn ? '✓' : '') + '</span><div style="flex:1;min-width:0;display:flex;flex-direction:column"><span>' + e(c.task) + '</span><span class="muted">' + e(c.freq) + ' · by ' + e(c.due !== APP.today ? fmtDate(c.due) + ', ' : '') + e(c.time) + '</span></div><span class="chip ' + (c.status === 'Done' ? 'c-green' : c.status === 'Done late' ? 'c-gold' : bad ? 'c-red' : '') + '">' + e(c.status) + '</span></div>';
+        }).join('') + '</details>';
+    }).join('') : '<p class="empty">Nobody in this group.</p>') + '</div>';
+    $('view').innerHTML = h;
+  });
+};
 
 // ---------- My Day ----------
 function nowHM() { var d = new Date(Date.now() + (330 + new Date().getTimezoneOffset()) * 60000); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
@@ -799,7 +830,7 @@ VIEWS.new = function () {
   h += '<div class="grid"><label>Owner (one person)<select id="no" onchange="loadOwner()"><option value="">Choose…</option>' + owners.map(function (u) { return '<option value="' + e(u.name) + '">' + e(u.name) + (u.role ? ' · ' + e(u.role) : '') + '</option>'; }).join('') + '</select></label>' +
     '<label>Related to<select id="nr"><option>Internal</option><option>External</option><option>Project</option></select></label></div>';
   h += '<label>Task<input id="nt" placeholder="Short and specific"></label>';
-  h += '<label>Done means (required)<textarea id="nd" rows="3" placeholder="What will be true when this is done? Anyone should be able to check it in one minute."></textarea></label>';
+  h += '<label>Done means — how will we know it is finished? (optional)<textarea id="nd" rows="2" placeholder="Example: 4 choker pieces handed to QC with weight slip. Leave blank and it will say: task completed, with photo proof."></textarea><span class="muted" style="font-weight:400">The checker compares the proof with this line before approving.</span></label>';
   h += '<div><div style="font-size:14px;font-weight:600;margin-bottom:6px">Proof needed</div><div class="chips" id="np">' + ['Photo', 'File', 'Link', 'Screenshot'].map(function (p) { return '<button type="button" class="pill' + (p === 'Link' ? ' on' : '') + '" onclick="setProof(this,\'' + p + '\')">' + p + '</button>'; }).join('') + '</div></div>';
   h += '<div class="grid"><div><div style="font-size:14px;font-weight:600;margin-bottom:6px">Priority</div><div class="seg" id="npr">' + ['High', 'Medium', 'Low'].map(function (p) { return '<button type="button" class="' + (p === 'Medium' ? 'on' : '') + '" onclick="setPrio(this,\'' + p + '\')">' + p + '</button>'; }).join('') + '</div></div>' +
     '<label>Target date<input type="date" id="ndt" min="' + addDays(APP.today, 1) + '"></label></div>';
@@ -886,7 +917,7 @@ function submitTask() {
   stopRec(); uploadFiles(MEDIA.nm, 'brief/' + APP.today).then(function (files) {
     return call('api_create_task', { f: {
       type: NT.type, givenBy: $('ng') ? $('ng').value : '', owner: $('no').value, related: $('nr').value, task: $('nt').value.trim(),
-      doneMeans: $('nd').value.trim(), proofType: NT.proof, priority: NT.priority, highReason: $('nh').value.trim(), date: $('ndt').value,
+      doneMeans: $('nd').value.trim() || ($('nt').value.trim() + ' — completed, with proof attached.'), proofType: NT.proof, priority: NT.priority, highReason: $('nh').value.trim(), date: $('ndt').value,
       attachments: files.concat($('nl').value.trim() ? [$('nl').value.trim()] : []), dropId: NT.drop
     } });
   }).then(function (r) {
