@@ -100,12 +100,13 @@ function draw(me, day) {
 })();
 sb.auth.getSession().then(function (r) {
   if (!r.data.session) {
-    document.getElementById('acct').innerHTML = '<a class="btn" href="./">Sign in</a>';
+    location.replace('./'); return;
     document.getElementById('who').textContent = 'Sign in once with Navrasa Tasks to see your systems.';
     draw(null, null); return;
   }
   return sb.rpc('api_boot').then(function (b) {
     var me = b.data && b.data.me;
+    if (!me || me.access !== 'Admin') { location.replace('./'); return; } // Hub is for Ashwyn Sir only until it is fully built
     document.getElementById('who').textContent = me ? 'Namaste ' + me.name + '. Every Navrasa system in one place.' : '';
     document.getElementById('acct').innerHTML = '<button class="btn sec" id="so">Sign out</button>';
     document.getElementById('so').onclick = function () { sb.auth.signOut().then(function () { location.reload(); }); };

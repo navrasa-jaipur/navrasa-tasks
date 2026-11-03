@@ -1,8 +1,8 @@
 {
-  "name": "Navrasa Hub",
+  "name": "Navrasa Tasks",
   "short_name": "Navrasa",
   "description": "Navrasa Tasks, checklists and every Navrasa system in one app",
-  "start_url": "./hub.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",

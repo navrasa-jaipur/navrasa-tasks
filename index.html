@@ -228,7 +228,7 @@ main{max-width:1180px;width:100%}
 <body>
 <div id="shell" class="noshell">
 <aside id="side" hidden>
-  <a class="sbrand" href="hub.html" title="Open Navrasa Hub"><span class="logo">N</span><span>Navrasa</span></a>
+  <a class="sbrand" href="./" title="Navrasa Tasks"><span class="logo">N</span><span>Navrasa</span></a>
   <button class="sbtn-new" id="sNew" hidden onclick="go('new')">+ New task</button>
   <nav id="snav"></nav>
   <div class="sfoot"><span class="av" id="sAv"></span><div style="min-width:0;flex:1"><b id="sName"></b><span id="sRole"></span></div><button class="sout" onclick="signOut()" title="Sign out">Sign out</button></div>
@@ -481,7 +481,7 @@ function go(v) {
   var n = navList(), taskish = ['tasks', 'kanban', 'cal'].indexOf(v) > -1;
   var btn = function (x) { return '<button class="' + (x[0] === v || (x[0] === 'tasks' && v === 'tasks') ? 'on' : '') + '" onclick="go(\'' + x[0] + '\')"><span class="ic">' + ICON[x[0]] + '</span>' + x[1] + '</button>'; };
   $('snav').innerHTML = '<span class="sh">My work</span>' + n.work.map(btn).join('') + '<span class="sh">Manage</span>' + n.manage.map(btn).join('') +
-    '<span class="sh">Navrasa</span><a href="hub.html"><span class="ic">' + ICON.hub + '</span>All systems (Hub)</a>';
+    (APP.me.access === 'Admin' ? '<span class="sh">Navrasa</span><a href="hub.html"><span class="ic">' + ICON.hub + '</span>All systems (Hub)</a>' : '');
   var bn = [['day', 'My Day'], ['tasks', 'Tasks'], ['kanban', 'Board'], ['cal', 'Calendar']];
   $('bnav').innerHTML = bn.map(function (x) { return '<button class="' + (x[0] === v ? 'on' : '') + '" onclick="go(\'' + x[0] + '\')"><span class="ic">' + ICON[x[0]] + '</span>' + x[1] + '</button>'; }).join('') +
     '<button class="' + (bn.every(function (x) { return x[0] !== v; }) ? 'on' : '') + '" onclick="moreMenu()"><span class="ic">' + ICON.more + '</span>More</button>';
@@ -496,7 +496,7 @@ function go(v) {
 function moreMenu() {
   var n = navList(), items = n.manage.concat(canCreate() ? [['new', 'New task']] : []);
   sheet('<h2>More</h2><div class="list">' + items.map(function (x) { return '<button class="card task" style="flex-direction:row;align-items:center;gap:12px" onclick="go(\'' + x[0] + '\')"><span style="font-size:20px;width:24px;text-align:center">' + ICON[x[0]] + '</span><b>' + x[1] + '</b></button>'; }).join('') +
-    '<a class="card task" style="flex-direction:row;align-items:center;gap:12px;text-decoration:none" href="hub.html"><span style="font-size:20px;width:24px;text-align:center">' + ICON.hub + '</span><b>All Navrasa systems (Hub)</b></a>' +
+    (APP.me.access === 'Admin' ? '<a class="card task" style="flex-direction:row;align-items:center;gap:12px;text-decoration:none" href="hub.html"><span style="font-size:20px;width:24px;text-align:center">' + ICON.hub + '</span><b>All Navrasa systems (Hub)</b></a>' : '') +
     '<button class="card task" style="flex-direction:row;align-items:center;gap:12px" onclick="signOut()"><span style="font-size:20px;width:24px;text-align:center">⇥</span><b>Sign out</b></button></div>');
 }
 function avatar(name, sm) {
@@ -653,6 +653,22 @@ VIEWS.clt = function () {
   });
 };
 
+
+// ---------- install as a phone app (Android one-tap, iPhone steps) ----------
+var INSTALL_EV = null;
+window.addEventListener('beforeinstallprompt', function (ev) { ev.preventDefault(); INSTALL_EV = ev; if (APP.view === 'day' && $('inst')) drawInstall(); });
+function drawInstall() {
+  var box = $('inst'); if (!box) return;
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone, skip = false;
+  try { skip = localStorage.getItem('navInstallSkip') === '1'; } catch (x) {}
+  var ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (standalone || skip || (!ios && !INSTALL_EV)) { box.innerHTML = ''; return; }
+  box.innerHTML = '<div class="next" style="flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between"><span><b style="font-size:19px">Put Navrasa Tasks on your home screen</b><br><span class="muted">' +
+    (ios ? 'Tap the Share button in Safari, then “Add to Home Screen”.' : 'Opens like any app. No Play Store needed.') + '</span></span><span class="row">' +
+    (INSTALL_EV ? '<button class="btn small" onclick="INSTALL_EV.prompt();INSTALL_EV.userChoice.then(function(){$(\'inst\').innerHTML=\'\'})">Install app</button>' : '') +
+    '<button class="btn sec small" onclick="try{localStorage.setItem(\'navInstallSkip\',\'1\')}catch(x){};$(\'inst\').innerHTML=\'\'">Not now</button></span></div>';
+}
+
 // ---------- My Day ----------
 function nowHM() { var d = new Date(Date.now() + (330 + new Date().getTimezoneOffset()) * 60000); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
 function hm12(t) { var h = +t.slice(0, 2), m = t.slice(3, 5); return ((h + 11) % 12 + 1) + (m === '00' ? '' : ':' + m) + (h < 12 ? ' AM' : ' PM'); }
@@ -673,7 +689,7 @@ VIEWS.day = function () {
       .sort(function (x, y) { return x.t < y.t ? -1 : x.t > y.t ? 1 : 0; });
     var pending = items.filter(function (i) { return i.kind === 't' || !isDone(i.c) && ['Not done', 'False tick'].indexOf(i.c.status) < 0; });
     var next = pending[0];
-    var h = '<div class="hello"><div><span class="muted">' + e(fmtDate(APP.today)) + (APP.working ? '' : ' · holiday or weekly off') + '</span><h1>Namaste ' + e(APP.me.name) + '</h1><span class="muted">' + e(APP.me.role || '') + (APP.me.department ? ' · ' + e(APP.me.department) : '') + '</span></div></div>';
+    var h = '<div id="inst"></div><div class="hello"><div><span class="muted">' + e(fmtDate(APP.today)) + (APP.working ? '' : ' · holiday or weekly off') + '</span><h1>Namaste ' + e(APP.me.name) + '</h1><span class="muted">' + e(APP.me.role || '') + (APP.me.department ? ' · ' + e(APP.me.department) : '') + '</span></div></div>';
     // three tiles
     var pctDone = totN ? Math.round(doneN * 100 / totN) : 0;
     h += '<div class="tiles">' +
@@ -717,7 +733,7 @@ VIEWS.day = function () {
       '<div><b>Google Calendar</b><span class="muted">' + (m.cal ? (m.calShared ? 'In the shared ' + e(m.cal) + ' calendar, marked with your name' : 'In your own calendar (' + e(m.cal) + ')') + '. Checklists show 30 minutes before their time; tasks show on the due day.' : 'You have no company email, so reminders are only here and on your printed sheet.') + '</span>' + (m.cal ? '<a class="btn sec small" target="_blank" rel="noopener" href="https://calendar.google.com/">Open Calendar</a>' : '') + '</div>' +
       '<div><b>Google Chat</b><span class="muted">' + (m.chat ? 'Navrasa Tasks Bot messages you at 9:30 AM, 1:30 PM and 5:30 PM with what is due.' : 'Not set up for you yet.') + '</span>' + (m.chat ? '<a class="btn sec small" target="_blank" rel="noopener" href="https://chat.google.com/">Open Chat</a>' : '') + '</div>' +
       '</div></section>';
-    $('view').innerHTML = h;
+    $('view').innerHTML = h; drawInstall();
   });
 };
 function checkRow(c) {

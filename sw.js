@@ -1,5 +1,5 @@
 // Navrasa app shell: always try the network first, fall back to the saved copy when offline.
-const C = 'navrasa-v4', SHELL = ['./', './index.html', './hub.html', './manifest.json', './icon-192.png'];
+const C = 'navrasa-v5', SHELL = ['./', './index.html', './hub.html', './manifest.json', './icon-192.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(k => Promise.all(k.filter(x => x !== C).map(x => caches.delete(x)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
